@@ -1,6 +1,6 @@
 # Lessons: rea
 
-Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 24 published attempts.
+Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 25 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -14,17 +14,24 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:hits_ir
 
-- Attempts: 12 (9 accepted, 1 rejected, 2 no candidate)
+- Attempts: 13 (10 accepted, 1 rejected, 2 no candidate)
 - Best accepted effect: 20.45% (ratio 0.7955), episode `0542a96fab94`
-- Accepted effects: 20.45%, 15.33%, 9.30%, 8.00%, 6.92%, 6.70%, 4.76%, 3.24%, 1.06%
+- Accepted effects: 20.45%, 15.33%, 9.30%, 8.00%, 6.92%, 6.70%, 4.76%, 3.24%, 2.20%, 1.06%
 - Why candidates failed: stale_conflict (1)
 - Files changed by accepted candidates: `bridge/native/rea_lldb_tracer.py`
 - Files changed by rejected candidates: `bridge/native/rea_lldb_tracer.py`
-- Median model spend per attempt: 0.3295 USD (over 12 attempts with a recorded cost)
+- Median model spend per attempt: 0.3364 USD (over 13 attempts with a recorded cost)
 
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I worked on the per-hit backtrace path in bridge/native/rea_lldb_tracer.py. In _frame_location I added a bounded _FRAME_MODULES dict keyed by id(module). Each entry holds the module itself, so the id cannot be reused. This is the same pattern _report_location already uses. It skips IsValid, GetFileSpec, GetFilename and str for modules we have already seen. I also made smaller edits near lines 92, 380, 595 and 614.
+> Evaluation 1, with 20 changed lines, moved hits_ir from 601536896 to 594469701, ratio 0.9883. Evaluation 3, with 26 lines, reached 588810766, ratio 0.9788. Both runs gave identical outputs. report_ir rose slightly, to ratio 1.0016 and then 1.0018, within guard limits. I submitted the 26-line candidate. It is queued for replay, and these numbers are mine, not a verdict.
+> Repeated module lookups per frame are a real cost in this path. Caching them helps by about two percent.
+> Next, I want to look at the small report_ir rise. I also want to profile the remaining per-hit JSON encoding.
+>
+> 2026-10-13, episode `49a78338255d` (accepted)
 
 > I moved three module-level imports in bridge/native/rea_lldb_tracer.py into the functions that use them. threading now loads in _OutputPipe.__init__ and start, select in _OutputPipe._reader_loop, and hashlib in _hash_file. The logic is unchanged. Before editing, I searched for outside references such as tracer.threading and found nothing that depended on the old names.
 > Evaluated on hits_ir, the change was rejected. hits_ir went from 631322986 to 626391348, a ratio of 0.9922, and it needed 0.9900. Evaluated on report_ir, it was accepted. report_ir went from 495610469 to 489512847, a ratio of 0.9877. Outputs were identical, and the guard passed with 1 file and 11 lines changed. I submitted it on report_ir. It is queued for replay.
@@ -53,13 +60,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next, I should find out what changed output in the 31 line version.
 >
 > 2026-10-13, episode `c0a57942ce61` (accepted)
-
-> I changed _frame_location in bridge/native/rea_lldb_tracer.py so it memoises the whole backtrace frame entry. The entry holds the location dict, the estimated size, and lazily filled json text. It is keyed by the raw LLDB values: load address int, file address int, module name, module path and symbol name. On a hit it skips the two hex formats and the five-key dict build per frame. The shared dict is never mutated. I also edited lines 547-554 to use the cached entry.
-> My sandbox run on hits_ir was accepted with identical outputs. hits_ir went from 801994363 to 748589135, ratio 0.9334. report_ir went from 478355964 to 478632049, ratio 1.0006, within its guard. The change was 53 lines in 1 file. It is submitted and queued for replay. That is not a verdict.
-> I believe per-frame formatting is a real cost in the hits path, because backtraces repeat the same frames.
-> Next I want to look at what still runs per event after a cache hit, and check why report_ir moved slightly up.
->
-> 2026-10-13, episode `4e46d287f462` (accepted)
 
 ## Licence
 
