@@ -1,6 +1,6 @@
 # Lessons: rea
 
-Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 18 published attempts.
+Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 19 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -14,17 +14,24 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:hits_ir
 
-- Attempts: 8 (5 accepted, 1 rejected, 2 no candidate)
+- Attempts: 9 (6 accepted, 1 rejected, 2 no candidate)
 - Best accepted effect: 20.45% (ratio 0.7955), episode `0542a96fab94`
-- Accepted effects: 20.45%, 15.33%, 8.00%, 6.92%, 1.06%
+- Accepted effects: 20.45%, 15.33%, 8.00%, 6.92%, 3.24%, 1.06%
 - Why candidates failed: stale_conflict (1)
 - Files changed by accepted candidates: `bridge/native/rea_lldb_tracer.py`
 - Files changed by rejected candidates: `bridge/native/rea_lldb_tracer.py`
-- Median model spend per attempt: 0.2948 USD (over 8 attempts with a recorded cost)
+- Median model spend per attempt: 0.2850 USD (over 9 attempts with a recorded cost)
 
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I tried to make the per-frame work cheaper in the backtrace loop of _handle_breakpoint in bridge/native/rea_lldb_tracer.py. Each frame used to build its location dict with _location and then pass it to _location_sizes. That built a memo key from tuple(location.items()), five 2-tuples per frame. I added a helper, _frame_location. It makes the same LLDB calls in the same order and looks up the memoised estimate and json text by a flat 5-tuple of the field values. I also trimmed four lines near line 547 down to three.
+> In my sandbox, hits_ir went from 887398966 to 852394088, a ratio of 0.9606. report_ir went from 494613297 to 496228113, a ratio of 1.0033, so it rose slightly. Outputs were identical, both builds passed, and the guard was ok at 41 lines. The candidate is submitted and queued for replay.
+> I now think the memo key construction was real overhead per frame, but it was not the main cost.
+> Next I want to see why report_ir moved, and look at where else the frame loop spends time.
+>
+> 2026-10-13, episode `7c3b002016a7` (accepted)
 
 > I worked in bridge/native/rea_lldb_tracer.py. _handle_breakpoint was serializing each event twice. It called json.dumps(record) for the exact budget check, then ran json.dumps again on the whole journal row once the backtrace was filled. I changed the memoised cache _location_sizes so it keeps each location's json.dumps text and not only its length. The size now comes from len() of that text. The journal row is built from the first record serialization. The guard counted 37 changed lines in 1 file.
 > In my sandbox, hits_ir went from 966112051 to 767688224, a ratio of 0.7946. report_ir went from 496144500 to 496089121, a ratio of 0.9999, so that change did almost nothing for it. Outputs were identical, both builds passed, and the guard limits held. The candidate is submitted and queued, and replays will decide.
@@ -53,13 +60,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next, I want to look at whether the hit path pays for this cache. I also want to check whether the hex address sizing can be made cheaper.
 >
 > 2026-10-13, episode `42e42572f715` (accepted)
-
-> I changed _handle_breakpoint in bridge/native/rea_lldb_tracer.py, lines 495-522. Its backtrace loop read context["retained_trace_bytes"], context["target"], record["backtrace"] and thread.GetFrameAtIndex on every frame. None of these change inside the loop. They are now read once before it. The remaining trace budget, MAX_TRACE_BYTES minus retained bytes, is also computed once. The budget checks became exact integer inequalities. 28 lines became 22.
-> My sandbox run on hits_ir was accepted. Both builds were ok, outputs were identical, and the guard passed with 1 file and 26 lines. hits_ir went from 942020790 to 930970966, ratio 0.9883. report_ir went from 509972393 to 510383728, ratio 1.0008, which is within its guard limit. That is my measurement, not a verdict. The candidate is queued for replay.
-> The per-frame loop costs something, but it is not where most of hits_ir goes. Lookup hoisting gives a small gain.
-> Next I should profile what each hit spends outside the loop, especially json.dumps and the argument_registers path.
->
-> 2026-10-13, episode `d4087fe98d17` (accepted)
 
 ## Licence
 
