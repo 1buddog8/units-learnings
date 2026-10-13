@@ -1,6 +1,6 @@
 # Lessons: morluto-rea
 
-Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 21 published attempts.
+Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 22 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -14,11 +14,11 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:codex_capture_ir
 
-- Attempts: 9 (7 accepted, 2 no candidate)
+- Attempts: 10 (7 accepted, 3 no candidate)
 - Best accepted effect: 6.56% (ratio 0.9344), episode `cdb3d8811d87`
 - Accepted effects: 6.56%, 4.83%, 4.76%, 3.90%, 1.63%, 1.61%, 1.60%
 - Files changed by accepted candidates: `experiments/analysis-efficiency/codex_context.py`
-- Median model spend per attempt: 0.3763 USD (over 9 attempts with a recorded cost)
+- Median model spend per attempt: 0.3807 USD (over 10 attempts with a recorded cost)
 
 ## Target perf:resource_observation_ir
 
@@ -31,6 +31,13 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I worked on the capture path in experiments/analysis-efficiency/codex_context.py, aiming at codex_capture_ir. The changes skipped the trailing strip when the remainder is just '\n', hoisted result.write and errors.append into locals, and formatted str and int receipt leaves inline. I made seven small edits in one file.
+> Evaluation 1 measured codex_capture_ir at 2944952749 against a parent of 2962109985, ratio 0.9942. Evaluation 3, with all the changes, measured 2943307203 against 2962109427, ratio 0.9937. Both were rejected because the required ratio is 0.9900. Outputs were identical. codex_select_event_ir and resource_observation_ir stayed near 1.0001 and 1.0000. This did not help enough, and I submitted no candidate.
+> Python-level trimming in this loop is close to exhausted. Most of the per-line cost sits in C decoding, encoding and sha256, plus selected event work.
+> Next time, cut how often decode, encode or sha256 run per line instead of tidying the Python around them.
+>
+> 2026-10-13, episode `a708b9ce43d3` (no candidate)
 
 > I worked on two files in morluto-rea. First I edited codex_context.py around the capture path, in three small edits and then a full rewrite of the file. Then I edited read_observation in resource_payload.py, lines 51-53. It called the JSON whitespace regex twice per receipt, building a match object each time. Now it only runs the regex when the first character is JSON whitespace or the text is empty, and checks the tail the same way.
 > The codex_context.py change did not help. codex_capture_ir went from 2869456507 to 2893207521, ratio 1.0083, against a required 0.9900, so it was rejected. The read_observation change was accepted in my sandbox. resource_observation_ir went from 2716588289 to 2622577172, ratio 0.9654, with identical outputs and the other guarded metrics within limits.
@@ -59,13 +66,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next time, I should measure the scanner and the encoder separately before touching the loop structure again.
 >
 > 2026-10-13, episode `fe53f5d8e396` (no candidate)
-
-> I worked on read_observation in experiments/analysis-efficiency/resource_payload.py, targeting resource_observation_ir. I rewrote its validation twice. The first rewrite replaced the per-value loops with set(map(type, ...)) and min(). The second used keys-view superset checks and a single control_group lookup.
-> Neither helped. The first gave resource_observation_ir 3077272482 against a parent of 2819360981, ratio 1.0915. The second gave 2834125883 against 2819360975, ratio 1.0052. The required ratio was 0.9900. Both builds passed, outputs were identical, and the guarded metrics stayed within limits. I submitted no candidate.
-> The short bytecode loops in read_observation are already cheaper than C-level helpers that allocate. I believe most of the remaining cost is JSON scanning and the bench harness in lineage_bench.py, not the validation.
-> Next time, profile the JSON parsing step and the bench's own overhead before touching validation again.
->
-> 2026-10-13, episode `010b20f062ca` (no candidate)
 
 ## Licence
 
