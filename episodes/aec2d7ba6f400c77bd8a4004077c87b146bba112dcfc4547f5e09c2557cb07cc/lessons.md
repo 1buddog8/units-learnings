@@ -1,6 +1,6 @@
 # Lessons: rea
 
-Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 17 published attempts.
+Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 18 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -14,17 +14,24 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:hits_ir
 
-- Attempts: 7 (4 accepted, 1 rejected, 2 no candidate)
-- Best accepted effect: 15.33% (ratio 0.8467), episode `8579b7963c0d`
-- Accepted effects: 15.33%, 8.00%, 6.92%, 1.06%
+- Attempts: 8 (5 accepted, 1 rejected, 2 no candidate)
+- Best accepted effect: 20.45% (ratio 0.7955), episode `0542a96fab94`
+- Accepted effects: 20.45%, 15.33%, 8.00%, 6.92%, 1.06%
 - Why candidates failed: stale_conflict (1)
 - Files changed by accepted candidates: `bridge/native/rea_lldb_tracer.py`
 - Files changed by rejected candidates: `bridge/native/rea_lldb_tracer.py`
-- Median model spend per attempt: 0.2671 USD (over 7 attempts with a recorded cost)
+- Median model spend per attempt: 0.2948 USD (over 8 attempts with a recorded cost)
 
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I worked in bridge/native/rea_lldb_tracer.py. _handle_breakpoint was serializing each event twice. It called json.dumps(record) for the exact budget check, then ran json.dumps again on the whole journal row once the backtrace was filled. I changed the memoised cache _location_sizes so it keeps each location's json.dumps text and not only its length. The size now comes from len() of that text. The journal row is built from the first record serialization. The guard counted 37 changed lines in 1 file.
+> In my sandbox, hits_ir went from 966112051 to 767688224, a ratio of 0.7946. report_ir went from 496144500 to 496089121, a ratio of 0.9999, so that change did almost nothing for it. Outputs were identical, both builds passed, and the guard limits held. The candidate is submitted and queued, and replays will decide.
+> My view now is that the hit path cost was mostly repeated serialization, not breakpoint handling itself.
+> Next I want to look at the report path, since report_ir barely moved. I also want to check whether _location_json_size still has callers that need the length alone.
+>
+> 2026-10-13, episode `0542a96fab94` (accepted)
 
 > In bridge/native/rea_lldb_tracer.py I read the breakpoint handling and the JSON size estimation, then made two edits. Lines 142-143 became 6 lines. Lines 498-525 became 38 lines. Both edits touch the area my searches covered: _handle_breakpoint, _estimate, _json_size and _location_json_size. I also read lineage_bench.py lines 95-155 to see what the bench measures.
 > I ran no sandbox evaluations. Nothing was measured, so I cannot say whether either edit helped. The session ended with no candidate submitted.
@@ -53,13 +60,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next I should profile what each hit spends outside the loop, especially json.dumps and the argument_registers path.
 >
 > 2026-10-13, episode `d4087fe98d17` (accepted)
-
-> I read bridge/native/rea_lldb_tracer.py, lineage_bench.py and lineage_fakelldb.py to look for remaining cost in _breakpoint_report. I made no edits and ran no sandbox evaluations.
-> The per-location work left in _breakpoint_report is already covered by two candidates still waiting on replays. One adds an early exit when no symbol-prefix filter applies. The other measures location size with the C string encoder. Any edit I could make to that function would rewrite the same lines. So I stopped without submitting a change.
-> I now believe _breakpoint_report has no free lines left to touch until those two candidates are judged. A third overlapping edit would only muddy which change caused what.
-> Next time, check the replay results for both candidates first. If one lands, start from the merged _breakpoint_report and look again. If neither lands, look outside that function. The constants found by the "^MAX_|^[A-Z_]+ = " search and the json.dumps call sites are places to start reading.
->
-> 2026-10-13, episode `adfc5bb038a9` (no candidate)
 
 ## Licence
 
