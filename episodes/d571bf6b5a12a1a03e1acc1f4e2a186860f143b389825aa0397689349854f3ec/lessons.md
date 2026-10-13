@@ -1,6 +1,6 @@
 # Lessons: morluto-rea
 
-Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 13 published attempts.
+Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 15 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -14,11 +14,11 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:codex_capture_ir
 
-- Attempts: 6 (5 accepted, 1 no candidate)
+- Attempts: 8 (7 accepted, 1 no candidate)
 - Best accepted effect: 6.56% (ratio 0.9344), episode `cdb3d8811d87`
-- Accepted effects: 6.56%, 4.83%, 4.76%, 3.90%, 1.61%
+- Accepted effects: 6.56%, 4.83%, 4.76%, 3.90%, 1.63%, 1.61%, 1.60%
 - Files changed by accepted candidates: `experiments/analysis-efficiency/codex_context.py`
-- Median model spend per attempt: 0.2511 USD (over 6 attempts with a recorded cost)
+- Median model spend per attempt: 0.3415 USD (over 8 attempts with a recorded cost)
 
 ## Target perf:resource_observation_ir
 
@@ -30,6 +30,20 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I changed _event_encoder in experiments/analysis-efficiency/codex_context.py. The cached C encoder was built with a markers dict, so every dict and list encoded per retained event ran a circular-reference check. Retained events come only from values decoded from JSON text, and those cannot be circular. The encoder now uses check_circular=False and passes markers=None to c_make_encoder. The edits touched lines 101-102 and line 111.
+> In my sandbox run the outcome was accepted and the outputs were identical. codex_capture_ir went from 3062998717 to 3008485869, a ratio of 0.9822. codex_select_event_ir was 0.9997 and resource_observation_ir was 1.0028. Both stayed within the guard limits. The candidate is submitted and waiting for independent replays.
+> The gain is small but real. The circular check was paying for safety that this data never needs.
+> Next, I want to look at what else runs per retained event in the encode path. The search for capture was too broad, with 6605 matches, so I should narrow it to the hot loop.
+>
+> 2026-10-13, episode `17a2b3d428f1` (accepted)
+
+> I worked in experiments/analysis-efficiency/codex_context.py, in capture_tool_context. It wrote context-receipt.json with json.dumps(receipt, indent=2). With indent set, json uses its slower pure-Python encoder, and the receipt holds one dict per source plus one per rejected line.
+> The first attempt changed 15 lines and was rejected. codex_capture_ir went from 2963969029 to 2958660828, ratio 0.9982, against a required 0.9900. It did not help enough. I then added a helper, _indented_json, that produces the same indent=2 text for the receipt's own value types: str-keyed dicts, lists, str and int. That run changed 41 lines and was accepted in my sandbox. codex_capture_ir went from 2963969148 to 2918335025, ratio 0.9846. Outputs were identical. The other guarded metrics stayed within limits.
+> The receipt serialization is a real cost here, but a modest one. I submitted it. It is queued for independent replays.
+> Next, I want to look at what else capture_tool_context builds per source, and whether lineage_bench.py exercises large receipts.
+>
+> 2026-10-13, episode `99bf6fec5235` (accepted)
 
 > I tried to make codex_select_event_ir cheaper by rewriting selected_event and _select_token_counts in experiments/analysis-efficiency/codex_context.py. I tried three versions. The first used dict.get with a sentinel. The second used dict comprehensions with a separate validation pass. The third used in plus subscript instead of dict.get.
 > None of them helped. Outputs were identical each time, but codex_select_event_ir got worse in all three, with ratios of 1.0706, 1.0668 and 1.0362 against a required 0.9900. All three were rejected. codex_capture_ir also rose each time, with ratios of 1.0069, 1.0094 and 1.0059. resource_observation_ir stayed at 1.0000 or 0.9998.
@@ -51,20 +65,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next, I would profile the capture loop itself before changing it again. I submitted nothing.
 >
 > 2026-10-13, episode `3c0e729bc7c6` (no candidate)
-
-> I worked in experiments/analysis-efficiency/codex_context.py. capture_tool_context encoded each retained event with JSONEncoder(ensure_ascii=False).encode. That path goes through iterencode on every call, which builds a new markers dict and a floatstr closure, then makes a new C encoder with c_make_encoder. I added a helper, _event_encoder, that builds the C encoder once per capture. It uses the same default, encode_basestring, separators, sort_keys, skipkeys and allow_nan. The edits were three small ones, 20 changed lines in total.
-> In my sandbox, codex_capture_ir went from 3247717168 to 3096334879, ratio 0.9534. codex_select_event_ir moved to ratio 1.0003 and resource_observation_ir to 0.9997, so both are flat. Outputs were identical, both builds passed and the guard was ok. I submitted it. It is queued for independent replays.
-> I now think per-call encoder setup was a real cost in this capture loop.
-> Next, I would look for other repeated encoder or closure setup in the select path.
->
-> 2026-10-13, episode `7401bb31697f` (accepted)
-
-> I worked in experiments/analysis-efficiency/codex_context.py. capture_tool_context decoded each rollout line that starts with '{' through JSONDecoder.decode. That path runs two Python frames, decode and raw_decode, and two regex whitespace matches before it reaches the C scanner. I changed the fast path to call the decoder's C scan_once at index 0 directly. A line starting with '{' has no leading whitespace, and parse_object either returns or raises JSONDecodeError. The edit touched lines 85-86 and line 103, 7 lines in total.
-> My sandbox run accepted it with identical outputs. codex_capture_ir went from 3393877457 to 3233815314, ratio 0.9528. codex_select_event_ir moved to ratio 1.0001, and resource_observation_ir also moved to ratio 1.0001. Both stayed within guard limits.
-> I now believe decode overhead per line is a real share of capture cost here. The C scanner itself was not the waste.
-> Next I will look at what selected_event does per line, and whether trailing-data checks can be kept cheaply. The candidate is queued, and replays will decide.
->
-> 2026-10-13, episode `9c3ac8ba9db7` (accepted)
 
 ## Licence
 
