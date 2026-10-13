@@ -1,6 +1,6 @@
 # Lessons: rea
 
-Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 21 published attempts.
+Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 22 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -14,17 +14,24 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:hits_ir
 
-- Attempts: 11 (8 accepted, 1 rejected, 2 no candidate)
+- Attempts: 12 (9 accepted, 1 rejected, 2 no candidate)
 - Best accepted effect: 20.45% (ratio 0.7955), episode `0542a96fab94`
-- Accepted effects: 20.45%, 15.33%, 8.00%, 6.92%, 6.70%, 4.76%, 3.24%, 1.06%
+- Accepted effects: 20.45%, 15.33%, 9.30%, 8.00%, 6.92%, 6.70%, 4.76%, 3.24%, 1.06%
 - Why candidates failed: stale_conflict (1)
 - Files changed by accepted candidates: `bridge/native/rea_lldb_tracer.py`
 - Files changed by rejected candidates: `bridge/native/rea_lldb_tracer.py`
-- Median model spend per attempt: 0.3226 USD (over 11 attempts with a recorded cost)
+- Median model spend per attempt: 0.3295 USD (over 12 attempts with a recorded cost)
 
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I worked in bridge/native/rea_lldb_tracer.py. _record_estimate was calling _estimated_json_size on the whole record dict at every breakpoint hit. That walked all eight keys and recursed into the registers list. I changed it so the estimate is built up while the record is assembled. Each register dict's size is added as it is built, and the receiver_class and selector sizes already computed for the base are reused. There were three edits, 39 changed lines in total.
+> My sandbox run accepted it. hits_ir went from 640738880 to 600088137, a ratio of 0.9366. report_ir went from 487976046 to 488562649, a ratio of 1.0012. That is slightly worse, but it is within the guard limits. Outputs were identical. The candidate is queued for independent replay.
+> What I now believe is that the per-hit path was paying for a full recursive size walk it did not need. The report path did not benefit.
+> Next, I want to look at what dominates report_ir. I also want to check whether the base record size could be cached across hits for the same breakpoint.
+>
+> 2026-10-13, episode `bd144566d6c6` (accepted)
 
 > I worked in bridge/native/rea_lldb_tracer.py on _handle_breakpoint. It built the stopped PC's location with the uncached _location. Then _record estimated it again, and _estimated_json_size ran over the whole record for the trace budget check.
 > My first try was a 2 line edit. It gave hits_ir 755525050 against 762070276, ratio 0.9914. That is short of the 0.9900 needed, so it was rejected and did not help enough. The second, at 31 lines, reached ratio 0.9537, but its outputs differed from the parent, so it was rejected. The third, at 43 lines, kept outputs identical. It measured hits_ir 726026499, ratio 0.9527, and report_ir ratio 0.9991. It was accepted in my sandbox and submitted. The verdict waits on replays.
@@ -53,13 +60,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next I want to look at the report path, since report_ir barely moved. I also want to check whether _location_json_size still has callers that need the length alone.
 >
 > 2026-10-13, episode `0542a96fab94` (accepted)
-
-> In bridge/native/rea_lldb_tracer.py I read the breakpoint handling and the JSON size estimation, then made two edits. Lines 142-143 became 6 lines. Lines 498-525 became 38 lines. Both edits touch the area my searches covered: _handle_breakpoint, _estimate, _json_size and _location_json_size. I also read lineage_bench.py lines 95-155 to see what the bench measures.
-> I ran no sandbox evaluations. Nothing was measured, so I cannot say whether either edit helped. The session ended with no candidate submitted.
-> My current reading is this. The size estimation helpers in rea_lldb_tracer.py are what the bench exercises. The _location_sizes path and the journal appends are where repeated work might happen. This is a reading of the code, not a result.
-> Next session, check whether the two edits are still in the working tree. Run lineage_bench.py on the unedited file to get a baseline, then run it on the edited file. Submit only if the numbers show a difference, and drop the edits if they do not.
->
-> 2026-10-13, episode `efc14ef6b232` (no candidate)
 
 ## Licence
 
