@@ -1,16 +1,16 @@
 # Lessons: rea
 
-Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 23 published attempts.
+Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 24 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
 ## Target perf:report_ir
 
-- Attempts: 11 (8 accepted, 3 no candidate)
+- Attempts: 12 (9 accepted, 3 no candidate)
 - Best accepted effect: 34.92% (ratio 0.6508), episode `d02dad97cc12`
-- Accepted effects: 34.92%, 16.74%, 10.08%, 4.12%, 3.50%, 2.45%, 2.32%, 1.99%
+- Accepted effects: 34.92%, 16.74%, 10.08%, 4.12%, 3.50%, 2.45%, 2.32%, 1.99%, 1.24%
 - Files changed by accepted candidates: `bridge/native/rea_lldb_tracer.py`
-- Median model spend per attempt: 0.3751 USD (over 11 attempts with a recorded cost)
+- Median model spend per attempt: 0.3403 USD (over 12 attempts with a recorded cost)
 
 ## Target perf:hits_ir
 
@@ -25,6 +25,13 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I moved three module-level imports in bridge/native/rea_lldb_tracer.py into the functions that use them. threading now loads in _OutputPipe.__init__ and start, select in _OutputPipe._reader_loop, and hashlib in _hash_file. The logic is unchanged. Before editing, I searched for outside references such as tracer.threading and found nothing that depended on the old names.
+> Evaluated on hits_ir, the change was rejected. hits_ir went from 631322986 to 626391348, a ratio of 0.9922, and it needed 0.9900. Evaluated on report_ir, it was accepted. report_ir went from 495610469 to 489512847, a ratio of 0.9877. Outputs were identical, and the guard passed with 1 file and 11 lines changed. I submitted it on report_ir. It is queued for replay.
+> I now believe that import cost in this tracer is a small but real share of report_ir. For hits_ir, deferring imports does not save enough to pass the threshold.
+> Next, I would profile what else the tracer loads at startup on the hits path. I would also check whether other heavy imports can move into the functions that use them.
+>
+> 2026-10-13, episode `f9114477ce09` (accepted)
 
 > I worked on bridge/native/rea_lldb_tracer.py, aiming at the report_ir benchmark. My first attempt reworked the breakpoint report code near lines 759 to 837. Then I reverted it and moved the threading import out of module level and into _OutputPipe.__init__ and _OutputPipe.start, the only places that use it.
 > The report rewrite was rejected in my sandbox. report_ir went from 498850151 to 500519695, ratio 1.0033, against a required 0.9900. It did not help, so I undid it. The import move was accepted in my sandbox. report_ir went from 498642240 to 493011023, ratio 0.9887, and hits_ir went from 608070403 to 603178094, ratio 0.9920. Outputs were identical. The commit then failed with HTTP 403, asleep, so nothing landed.
@@ -53,13 +60,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next I want to look at what still runs per event after a cache hit, and check why report_ir moved slightly up.
 >
 > 2026-10-13, episode `4e46d287f462` (accepted)
-
-> I tried to make the per-frame work cheaper in the backtrace loop of _handle_breakpoint in bridge/native/rea_lldb_tracer.py. Each frame used to build its location dict with _location and then pass it to _location_sizes. That built a memo key from tuple(location.items()), five 2-tuples per frame. I added a helper, _frame_location. It makes the same LLDB calls in the same order and looks up the memoised estimate and json text by a flat 5-tuple of the field values. I also trimmed four lines near line 547 down to three.
-> In my sandbox, hits_ir went from 887398966 to 852394088, a ratio of 0.9606. report_ir went from 494613297 to 496228113, a ratio of 1.0033, so it rose slightly. Outputs were identical, both builds passed, and the guard was ok at 41 lines. The candidate is submitted and queued for replay.
-> I now think the memo key construction was real overhead per frame, but it was not the main cost.
-> Next I want to see why report_ir moved, and look at where else the frame loop spends time.
->
-> 2026-10-13, episode `7c3b002016a7` (accepted)
 
 ## Licence
 
