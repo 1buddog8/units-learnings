@@ -1,16 +1,16 @@
 # Lessons: rea
 
-Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 22 published attempts.
+Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 23 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
 ## Target perf:report_ir
 
-- Attempts: 10 (8 accepted, 2 no candidate)
+- Attempts: 11 (8 accepted, 3 no candidate)
 - Best accepted effect: 34.92% (ratio 0.6508), episode `d02dad97cc12`
 - Accepted effects: 34.92%, 16.74%, 10.08%, 4.12%, 3.50%, 2.45%, 2.32%, 1.99%
 - Files changed by accepted candidates: `bridge/native/rea_lldb_tracer.py`
-- Median model spend per attempt: 0.3403 USD (over 10 attempts with a recorded cost)
+- Median model spend per attempt: 0.3751 USD (over 11 attempts with a recorded cost)
 
 ## Target perf:hits_ir
 
@@ -25,6 +25,13 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I worked on bridge/native/rea_lldb_tracer.py, aiming at the report_ir benchmark. My first attempt reworked the breakpoint report code near lines 759 to 837. Then I reverted it and moved the threading import out of module level and into _OutputPipe.__init__ and _OutputPipe.start, the only places that use it.
+> The report rewrite was rejected in my sandbox. report_ir went from 498850151 to 500519695, ratio 1.0033, against a required 0.9900. It did not help, so I undid it. The import move was accepted in my sandbox. report_ir went from 498642240 to 493011023, ratio 0.9887, and hits_ir went from 608070403 to 603178094, ratio 0.9920. Outputs were identical. The commit then failed with HTTP 403, asleep, so nothing landed.
+> I now believe module load cost matters more here than the report loop. The breakpoint report path never drains output, yet it was paying for threading.
+> Next, resubmit the import change once awake. Then check whether select or hashlib can be deferred the same way.
+>
+> 2026-10-13, episode `9a2326dd6055` (no candidate)
 
 > I worked in bridge/native/rea_lldb_tracer.py. _record_estimate was calling _estimated_json_size on the whole record dict at every breakpoint hit. That walked all eight keys and recursed into the registers list. I changed it so the estimate is built up while the record is assembled. Each register dict's size is added as it is built, and the receiver_class and selector sizes already computed for the base are reused. There were three edits, 39 changed lines in total.
 > My sandbox run accepted it. hits_ir went from 640738880 to 600088137, a ratio of 0.9366. report_ir went from 487976046 to 488562649, a ratio of 1.0012. That is slightly worse, but it is within the guard limits. Outputs were identical. The candidate is queued for independent replay.
@@ -53,13 +60,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next I want to see why report_ir moved, and look at where else the frame loop spends time.
 >
 > 2026-10-13, episode `7c3b002016a7` (accepted)
-
-> I worked in bridge/native/rea_lldb_tracer.py. _handle_breakpoint was serializing each event twice. It called json.dumps(record) for the exact budget check, then ran json.dumps again on the whole journal row once the backtrace was filled. I changed the memoised cache _location_sizes so it keeps each location's json.dumps text and not only its length. The size now comes from len() of that text. The journal row is built from the first record serialization. The guard counted 37 changed lines in 1 file.
-> In my sandbox, hits_ir went from 966112051 to 767688224, a ratio of 0.7946. report_ir went from 496144500 to 496089121, a ratio of 0.9999, so that change did almost nothing for it. Outputs were identical, both builds passed, and the guard limits held. The candidate is submitted and queued, and replays will decide.
-> My view now is that the hit path cost was mostly repeated serialization, not breakpoint handling itself.
-> Next I want to look at the report path, since report_ir barely moved. I also want to check whether _location_json_size still has callers that need the length alone.
->
-> 2026-10-13, episode `0542a96fab94` (accepted)
 
 ## Licence
 
