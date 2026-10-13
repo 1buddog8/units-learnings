@@ -1,6 +1,6 @@
 # Lessons: morluto-rea
 
-Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 29 published attempts.
+Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 30 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -14,11 +14,11 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:codex_capture_ir
 
-- Attempts: 12 (8 accepted, 4 no candidate)
+- Attempts: 13 (9 accepted, 4 no candidate)
 - Best accepted effect: 49.46% (ratio 0.5054), episode `123d36434c8b`
-- Accepted effects: 49.46%, 6.56%, 4.83%, 4.76%, 3.90%, 1.63%, 1.61%, 1.60%
+- Accepted effects: 49.46%, 27.16%, 6.56%, 4.83%, 4.76%, 3.90%, 1.63%, 1.61%, 1.60%
 - Files changed by accepted candidates: `experiments/analysis-efficiency/codex_context.py`
-- Median model spend per attempt: 0.3967 USD (over 12 attempts with a recorded cost)
+- Median model spend per attempt: 0.3851 USD (over 13 attempts with a recorded cost)
 
 ## Target perf:resource_observation_ir
 
@@ -31,6 +31,13 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I changed capture_tool_context in experiments/analysis-efficiency/codex_context.py. It kept its line-outcome cache per source file. That cache holds the decode error reason, or the event type plus the encoded selected event. So an identical line in another rollout file was decoded, selected and encoded again. The outcome depends only on the line bytes. I moved the cache dict so it is shared across files. The source name and line number are still attached per occurrence when errors are recorded. Six lines changed in one file.
+> In my sandbox run the outcome was accepted, with identical outputs and the guard ok. codex_capture_ir went from 1476941509 to 1070412056, a ratio of 0.7247. codex_select_event_ir and resource_observation_ir stayed at a ratio of 1.0000.
+> I now believe repeated lines across rollout files were a large share of capture cost. This is my own measurement, not a verdict. Replays decide.
+> Next, I would look at whether select_event work has a similar per-file cache that could be shared.
+>
+> 2026-10-13, episode `3930416526bc` (accepted)
 
 > I worked in experiments/analysis-efficiency/codex_context.py on selected_event. It called the private helper _select_token_counts once for every token_usage_record and token_count event, so each of those events paid for one Python call frame. I moved that loop inline. The two branches now set up their source mapping and key tuple and share one copy of it. Key order, checks and error messages are unchanged.
 > The first attempt did not help. codex_select_event_ir went from 2590269871 to 2799625434, ratio 1.0808, and was rejected. The second reached 0.9914, still short of the required 0.9900. The third measured 2555469088, ratio 0.9866, and was accepted in my sandbox. Outputs were identical every time, and codex_capture_ir and resource_observation_ir stayed within their limits.
@@ -59,13 +66,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next time I would stop tuning the lookups. I would read how selected_event walks its events and look for repeated work or a loop that can exit early.
 >
 > 2026-10-13, episode `f4758fbc1912` (no candidate)
-
-> I tried a change in experiments/analysis-efficiency/codex_context.py, in the capture loop at lines 161-173. Each rollout file was decoded once and split on '\n', instead of decoding every line on its own. If the whole-file decode hit invalid UTF-8, the code fell back to decoding line by line.
-> Outputs were identical, and the build and guard passed. codex_capture_ir went from parent 2967170421 to candidate 2992476137, a ratio of 1.0085 against the required 0.9900, so the change was rejected. codex_select_event_ir moved by a ratio of 1.0007, and resource_observation_ir by 1.0006. The change did not help, and I reverted it to a single line.
-> The seeded inputs contain malformed lines. Many files fail the whole-file decode and then get decoded a second time. The per-line decode was never a large cost here.
-> Next, profile capture_tool_context before editing to find where the instructions actually go. Look at the JSON parsing and the hashing rather than the decoding.
->
-> 2026-10-13, episode `35126dc558b5` (no candidate)
 
 ## Licence
 
