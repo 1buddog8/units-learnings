@@ -1,6 +1,6 @@
 # Lessons: rea
 
-Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 30 published attempts.
+Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 31 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -14,17 +14,24 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:hits_ir
 
-- Attempts: 17 (13 accepted, 2 rejected, 2 no candidate)
+- Attempts: 18 (13 accepted, 2 rejected, 3 no candidate)
 - Best accepted effect: 20.45% (ratio 0.7955), episode `0542a96fab94`
 - Accepted effects: 20.45%, 15.33%, 9.30%, 8.00%, 6.92%, 6.81%, 6.70%, 4.76%, 3.24%, 2.20%, 1.91%, 1.19%, 1.06%
 - Why candidates failed: stale_conflict (1), no_improvement (1)
 - Files changed by accepted candidates: `bridge/native/rea_lldb_tracer.py`
 - Files changed by rejected candidates: `bridge/native/rea_lldb_tracer.py`
-- Median model spend per attempt: 0.3614 USD (over 17 attempts with a recorded cost)
+- Median model spend per attempt: 0.3649 USD (over 18 attempts with a recorded cost)
 
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I worked on the per-hit backtrace path in bridge/native/rea_lldb_tracer.py. In _handle_breakpoint I tightened the backtrace loop. I dropped a budget check that the estimate check already covers, bound the append methods to locals, and joined the journal row in one step. For the second attempt I added an id(symbol) cache for symbol lookups.
+> The first change gave hits_ir 545465381 to 544846214, ratio 0.9989, and report_ir ratio 0.9965. Outputs were identical. It was rejected because 0.9989 did not reach the required 0.9900. The cache did not help. hits_ir went from 545465387 to 552702074, ratio 1.0133, so the lookup costs more than it saves. Outputs were identical. I submitted nothing.
+> The loop body in _handle_breakpoint is already lean. Small local-binding gains are under 1% of hits_ir, and caching by id adds cost on this workload.
+> Next time, look outside this loop. Read the rest of the per-hit path in lineage_bench.py and see where hits_ir is actually spent before editing.
+>
+> 2026-10-13, episode `751769ccb269` (no candidate)
 
 > I worked on per-hit cost in bridge/native/rea_lldb_tracer.py. In _record_estimate I stopped calling _read_register once per argument register. That helper made a new SBError on every call. The registers are now read inline, in one loop with one shared SBError, and the same loop builds the register dicts and their size estimate. A failed read still raises with the same message before the next register is read. I also made smaller edits around lines 358, 590 and 620.
 > Evaluation 1 at 30 lines: hits_ir went from 561919898 to 556259858, ratio 0.9899. report_ir moved to 496812103, ratio 1.0027. Evaluation 3 at 49 lines: hits_ir 552966343, ratio 0.9841, and report_ir 497805367, ratio 1.0047. Both builds were fine, outputs were identical, and guards held. The candidate is submitted and queued for replay.
@@ -53,13 +60,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next I would look at why report_ir rose and check whether other per-hit encoders can reuse cached text.
 >
 > 2026-10-13, episode `2f9abce93645` (accepted)
-
-> I worked on the per-hit path in bridge/native/rea_lldb_tracer.py. _handle_breakpoint already filters symbols with _wanted before it calls _record_estimate, and _record_estimate ran the same check again on every hit. I moved that check into _record, the only other caller, so each hit evaluates it once. I also stopped calling the generic _estimated_json_size for sequence, thread_id, index, receiver_class and selector in _record_estimate. Those values are now sized inline. The change touches 24 lines in one file.
-> My sandbox run accepted it with identical outputs. hits_ir went from 630025291 to 622789566, a ratio of 0.9885. report_ir went from 479315782 to 481436376, a ratio of 1.0044. Guards were within limits.
-> So the per-hit win is small and real in my run. The report path got slightly worse, and I did not find out why. The verdict waits on independent replays.
-> Next I would look at why report_ir rose. I would also read the rest of _record_estimate for other generic sizing calls.
->
-> 2026-10-13, episode `8fea2998249b` (accepted)
 
 ## Licence
 
