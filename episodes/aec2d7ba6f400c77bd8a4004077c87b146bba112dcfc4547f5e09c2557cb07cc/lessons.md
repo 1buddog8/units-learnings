@@ -1,6 +1,6 @@
 # Lessons: rea
 
-Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 25 published attempts.
+Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 26 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -14,17 +14,24 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:hits_ir
 
-- Attempts: 13 (10 accepted, 1 rejected, 2 no candidate)
+- Attempts: 14 (11 accepted, 1 rejected, 2 no candidate)
 - Best accepted effect: 20.45% (ratio 0.7955), episode `0542a96fab94`
-- Accepted effects: 20.45%, 15.33%, 9.30%, 8.00%, 6.92%, 6.70%, 4.76%, 3.24%, 2.20%, 1.06%
+- Accepted effects: 20.45%, 15.33%, 9.30%, 8.00%, 6.92%, 6.70%, 4.76%, 3.24%, 2.20%, 1.19%, 1.06%
 - Why candidates failed: stale_conflict (1)
 - Files changed by accepted candidates: `bridge/native/rea_lldb_tracer.py`
 - Files changed by rejected candidates: `bridge/native/rea_lldb_tracer.py`
-- Median model spend per attempt: 0.3364 USD (over 13 attempts with a recorded cost)
+- Median model spend per attempt: 0.3489 USD (over 14 attempts with a recorded cost)
 
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I worked on the per-hit path in bridge/native/rea_lldb_tracer.py. _handle_breakpoint already filters symbols with _wanted before it calls _record_estimate, and _record_estimate ran the same check again on every hit. I moved that check into _record, the only other caller, so each hit evaluates it once. I also stopped calling the generic _estimated_json_size for sequence, thread_id, index, receiver_class and selector in _record_estimate. Those values are now sized inline. The change touches 24 lines in one file.
+> My sandbox run accepted it with identical outputs. hits_ir went from 630025291 to 622789566, a ratio of 0.9885. report_ir went from 479315782 to 481436376, a ratio of 1.0044. Guards were within limits.
+> So the per-hit win is small and real in my run. The report path got slightly worse, and I did not find out why. The verdict waits on independent replays.
+> Next I would look at why report_ir rose. I would also read the rest of _record_estimate for other generic sizing calls.
+>
+> 2026-10-13, episode `8fea2998249b` (accepted)
 
 > I worked on the per-hit backtrace path in bridge/native/rea_lldb_tracer.py. In _frame_location I added a bounded _FRAME_MODULES dict keyed by id(module). Each entry holds the module itself, so the id cannot be reused. This is the same pattern _report_location already uses. It skips IsValid, GetFileSpec, GetFilename and str for modules we have already seen. I also made smaller edits near lines 92, 380, 595 and 614.
 > Evaluation 1, with 20 changed lines, moved hits_ir from 601536896 to 594469701, ratio 0.9883. Evaluation 3, with 26 lines, reached 588810766, ratio 0.9788. Both runs gave identical outputs. report_ir rose slightly, to ratio 1.0016 and then 1.0018, within guard limits. I submitted the 26-line candidate. It is queued for replay, and these numbers are mine, not a verdict.
@@ -53,13 +60,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next, I want to look at what dominates report_ir. I also want to check whether the base record size could be cached across hits for the same breakpoint.
 >
 > 2026-10-13, episode `bd144566d6c6` (accepted)
-
-> I worked in bridge/native/rea_lldb_tracer.py on _handle_breakpoint. It built the stopped PC's location with the uncached _location. Then _record estimated it again, and _estimated_json_size ran over the whole record for the trace budget check.
-> My first try was a 2 line edit. It gave hits_ir 755525050 against 762070276, ratio 0.9914. That is short of the 0.9900 needed, so it was rejected and did not help enough. The second, at 31 lines, reached ratio 0.9537, but its outputs differed from the parent, so it was rejected. The third, at 43 lines, kept outputs identical. It measured hits_ir 726026499, ratio 0.9527, and report_ir ratio 0.9991. It was accepted in my sandbox and submitted. The verdict waits on replays.
-> I now believe the PC location should come from the memoised _frame_location entry. It makes the same LLDB calls in the same order and already carries the estimated size. The budget check can reuse that size instead of measuring again.
-> Next, I should find out what changed output in the 31 line version.
->
-> 2026-10-13, episode `c0a57942ce61` (accepted)
 
 ## Licence
 
