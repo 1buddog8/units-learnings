@@ -1,6 +1,6 @@
 # Lessons: rea
 
-Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 19 published attempts.
+Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 20 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -14,17 +14,24 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:hits_ir
 
-- Attempts: 9 (6 accepted, 1 rejected, 2 no candidate)
+- Attempts: 10 (7 accepted, 1 rejected, 2 no candidate)
 - Best accepted effect: 20.45% (ratio 0.7955), episode `0542a96fab94`
-- Accepted effects: 20.45%, 15.33%, 8.00%, 6.92%, 3.24%, 1.06%
+- Accepted effects: 20.45%, 15.33%, 8.00%, 6.92%, 6.70%, 3.24%, 1.06%
 - Why candidates failed: stale_conflict (1)
 - Files changed by accepted candidates: `bridge/native/rea_lldb_tracer.py`
 - Files changed by rejected candidates: `bridge/native/rea_lldb_tracer.py`
-- Median model spend per attempt: 0.2850 USD (over 9 attempts with a recorded cost)
+- Median model spend per attempt: 0.3038 USD (over 10 attempts with a recorded cost)
 
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I changed _frame_location in bridge/native/rea_lldb_tracer.py so it memoises the whole backtrace frame entry. The entry holds the location dict, the estimated size, and lazily filled json text. It is keyed by the raw LLDB values: load address int, file address int, module name, module path and symbol name. On a hit it skips the two hex formats and the five-key dict build per frame. The shared dict is never mutated. I also edited lines 547-554 to use the cached entry.
+> My sandbox run on hits_ir was accepted with identical outputs. hits_ir went from 801994363 to 748589135, ratio 0.9334. report_ir went from 478355964 to 478632049, ratio 1.0006, within its guard. The change was 53 lines in 1 file. It is submitted and queued for replay. That is not a verdict.
+> I believe per-frame formatting is a real cost in the hits path, because backtraces repeat the same frames.
+> Next I want to look at what still runs per event after a cache hit, and check why report_ir moved slightly up.
+>
+> 2026-10-13, episode `4e46d287f462` (accepted)
 
 > I tried to make the per-frame work cheaper in the backtrace loop of _handle_breakpoint in bridge/native/rea_lldb_tracer.py. Each frame used to build its location dict with _location and then pass it to _location_sizes. That built a memo key from tuple(location.items()), five 2-tuples per frame. I added a helper, _frame_location. It makes the same LLDB calls in the same order and looks up the memoised estimate and json text by a flat 5-tuple of the field values. I also trimmed four lines near line 547 down to three.
 > In my sandbox, hits_ir went from 887398966 to 852394088, a ratio of 0.9606. report_ir went from 494613297 to 496228113, a ratio of 1.0033, so it rose slightly. Outputs were identical, both builds passed, and the guard was ok at 41 lines. The candidate is submitted and queued for replay.
@@ -53,13 +60,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next I will cache module name, path and related fields in _breakpoint_report and measure report_ir again against 0.9900.
 >
 > 2026-10-13, episode `592bbf0d1b8e` (no candidate)
-
-> I worked on _breakpoint_report in bridge/native/rea_lldb_tracer.py. I wanted to cut report_ir by not recomputing module name, path and their JSON sizes for every new location.
-> The first attempt made things worse. report_ir went from 497451928 to 519614372, ratio 1.0446, and it was rejected. The second attempt helped a little but not enough. report_ir was 0.9974 against the required 0.9900, so it was rejected too. The third added _report_location. It caches each module's name, path and size contributions by module id for one report call, and the cache entry holds the module so its id cannot be reused. report_ir went from 497451928 to 487662782, ratio 0.9803, and it was accepted in my sandbox. hits_ir rose slightly, ratio 1.0032. Outputs were identical. I submitted it, 96 changed lines, and it is waiting on replays.
-> I now believe the per-location module lookup and JSON sizing is where report time goes.
-> Next, I want to look at whether the hit path pays for this cache. I also want to check whether the hex address sizing can be made cheaper.
->
-> 2026-10-13, episode `42e42572f715` (accepted)
 
 ## Licence
 
