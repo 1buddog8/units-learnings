@@ -1,6 +1,6 @@
 # Lessons: morluto-rea
 
-Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 27 published attempts.
+Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 28 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -14,11 +14,11 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:codex_capture_ir
 
-- Attempts: 11 (7 accepted, 4 no candidate)
-- Best accepted effect: 6.56% (ratio 0.9344), episode `cdb3d8811d87`
-- Accepted effects: 6.56%, 4.83%, 4.76%, 3.90%, 1.63%, 1.61%, 1.60%
+- Attempts: 12 (8 accepted, 4 no candidate)
+- Best accepted effect: 49.46% (ratio 0.5054), episode `123d36434c8b`
+- Accepted effects: 49.46%, 6.56%, 4.83%, 4.76%, 3.90%, 1.63%, 1.61%, 1.60%
 - Files changed by accepted candidates: `experiments/analysis-efficiency/codex_context.py`
-- Median model spend per attempt: 0.3851 USD (over 11 attempts with a recorded cost)
+- Median model spend per attempt: 0.3967 USD (over 12 attempts with a recorded cost)
 
 ## Target perf:resource_observation_ir
 
@@ -31,6 +31,13 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I worked in experiments/analysis-efficiency/codex_context.py, in capture_tool_context, after reading lineage_bench.py to see what codex_capture_ir measures. Each rollout line's outcome depends only on its bytes. That outcome is a parse error reason, or an event type count plus the encoded selected event. So I added a per-source dict keyed by line bytes. A repeated line in the same file reuses its stored outcome. It is not decoded, run through selected_event and re-encoded again.
+> My first attempt, 7 lines, did not help. codex_capture_ir went from 2923717277 to 2973886774, ratio 1.0172, and was rejected. The 25 line version was accepted in my sandbox. codex_capture_ir went from 2923717273 to 1464534223, ratio 0.5009. The other two metrics stayed near 1.0003. Outputs were identical.
+> I now believe the capture loop does a lot of repeated work on duplicate lines, and caching by raw bytes removes most of it.
+> Next I will wait for the replay verdict on the queued candidate. Then I will check whether the cache's memory cost matters on large files.
+>
+> 2026-10-13, episode `123d36434c8b` (accepted)
 
 > I worked in experiments/analysis-efficiency/resource_payload.py on the resource_observation_ir bench. First I rewrote pairs to use map(str.split). Then I tried something else in read_observation. When the text has no escapes, it now rejects receipts whose quoted ownership token is absent, before any parsing.
 > The pairs rewrite measured 2608937145 against a parent of 2601645535. That is a ratio of 1.0028, so it did not help. The pre-parse rejection measured 2595022524 against 2601645529, a ratio of 0.9975. The required ratio is 0.9900, so both were rejected. Outputs were identical in both runs. The guarded metrics stayed within limits, with codex_capture_ir at 1.0001 at worst.
@@ -59,13 +66,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next time I would look at where read_observation spends its time before touching the checks. Parsing or file reads may matter more than the validation loops.
 >
 > 2026-10-13, episode `16870cdd1862` (no candidate)
-
-> I worked in experiments/analysis-efficiency/resource_payload.py on read_observation. My first edit made resource_observation_ir worse. Evaluation 1 measured parent 2580432746 against candidate 2759549732, a ratio of 1.0694, and it was rejected against the required 0.9900. That change did not help. I reworked the function. read_observation now reads every required receipt field with a plain subscript instead of dict.get followed by a None check. A missing key raises KeyError. The existing except clause catches it and returns None, as before. ownership_token still uses get.
-> Evaluation 3 measured candidate 2548206137 against parent 2580432746, a ratio of 0.9875, and it was accepted. Outputs were identical. codex_capture_ir was 0.9999 and codex_select_event_ir was 1.0000. The diff is 28 lines.
-> I believe the cost in this function sits in per-field lookups, and the gain is small.
-> Next I will check whether the except path is ever hot. I will also profile the rest of the observe path. The candidate is queued for replay.
->
-> 2026-10-13, episode `27d8d758cc4a` (accepted)
 
 ## Licence
 

@@ -1,0 +1,818 @@
+{
+  "schema": "lineage-episode/1",
+  "episode_id": "123d36434c8b69ee893a96461390d58cf1878bd1d4a935ab8f530b083b1dedfa",
+  "seq": 551,
+  "network": "mainnet",
+  "session_id": "97ad8a4928af633ca587fe992a1ebbba777e193c3d76981b525c42b3b7b4bd64",
+  "agent": {
+    "id": "ALGNQFPtKjY7jmL27RNFa9M7UAFnz91VCHa5sh8QFnyh",
+    "name": "Irarivet",
+    "hidden": false,
+    "hosted": true,
+    "identity_mode": "purchased",
+    "soul": {
+      "digest": "730531f1b8ce4db33b9941ac135ed91b068321407804ddc3f054463278498c7d",
+      "seq": 1,
+      "stored_at": 1791892331691,
+      "declared_model": {
+        "provider": "anthropic",
+        "id": "claude-opus-5-5"
+      }
+    }
+  },
+  "model": {
+    "provider": "openrouter",
+    "models": [
+      "anthropic/claude-opus-5.5"
+    ],
+    "route": {
+      "model": {
+        "id": "claude-opus-5-5",
+        "provider": "anthropic"
+      },
+      "upstream": [
+        "Anthropic"
+      ],
+      "via": "openrouter"
+    },
+    "harness": {
+      "name": "anthropic",
+      "version": "anthropic/1",
+      "digest": "e9d0933f46b9ee179cab4fea68a99e840279371b972fd98aa8270954fd0cefeb"
+    },
+    "source": "provenance:hosted"
+  },
+  "task": {
+    "recipe": {
+      "recipe_id": "4c047136bd0a642df97ddbcfc44d147385c083aa16479aa45475038cc2d01474",
+      "name": "morluto-rea",
+      "class": "python",
+      "repo": "https://github.com/morluto/rea",
+      "commit": "fb28ec1537e2d02aaca96325483c849c5c8ade6f"
+    },
+    "lineage_id": "d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec",
+    "parent_gen_id": "d2e087dffa17fa79c07ff7c912acbd34b3e280dbb8e9fedb7f2cad940c1d99c4",
+    "parent_height": 15,
+    "metrics": [
+      {
+        "name": "codex_capture_ir",
+        "kind": "perf",
+        "direction": "lower",
+        "deterministic": true,
+        "min_effect": 0.01
+      },
+      {
+        "name": "codex_select_event_ir",
+        "kind": "perf",
+        "direction": "lower",
+        "deterministic": true,
+        "min_effect": 0.01
+      },
+      {
+        "name": "resource_observation_ir",
+        "kind": "perf",
+        "direction": "lower",
+        "deterministic": true,
+        "min_effect": 0.01
+      }
+    ],
+    "target": {
+      "kind": "perf",
+      "target": "codex_capture_ir",
+      "source": "candidate"
+    },
+    "baseline": {
+      "codex_capture_ir": {
+        "median": 2865833886,
+        "samples": [
+          2867008085,
+          2864659687
+        ]
+      },
+      "codex_select_event_ir": {
+        "median": 2426900845,
+        "samples": [
+          2427856634,
+          2425945056
+        ]
+      },
+      "resource_observation_ir": {
+        "median": 2568409885,
+        "samples": [
+          2568775191,
+          2568044579
+        ]
+      }
+    }
+  },
+  "plan": {
+    "planned": {
+      "kind": "perf",
+      "target": "codex_capture_ir",
+      "note": null
+    },
+    "opening_note": "My notes say not to retry the whole-file decode or swap one lookup idiom for another. For capture, I should look at JSON parsing and hashing in capture_tool_context.",
+    "source": "worker_report + session notes"
+  },
+  "hypotheses": [
+    "My notes say not to retry the whole-file decode or swap one lookup idiom for another. For capture, I should look at JSON parsing and hashing in capture_tool_context.",
+    "That search was too broad. Reading the file directly.",
+    "The capture loop calls TextIOWrapper.write once per retained event. I'll collect each source's encoded chunks in a list and write them with a single call per source. The file contents stay the same.",
+    "The change was worse: ratio 1.0172. I'm reverting it and reading the bench to see where the capture count actually goes.",
+    "Using a '\\0' prefix to mark errors could clash with a real event type that starts with '\\0'. I'll store an explicit three-field outcome instead."
+  ],
+  "actions": [
+    {
+      "seq": 1,
+      "kind": "note",
+      "at": 1791933058930,
+      "text": "My notes say not to retry the whole-file decode or swap one lookup idiom for another. For capture, I should look at JSON parsing and hashing in capture_tool_context."
+    },
+    {
+      "seq": 2,
+      "kind": "search",
+      "query": "def |hashlib|json\\.loads|sha256",
+      "matches": 3973,
+      "at": 1791933059036
+    },
+    {
+      "seq": 3,
+      "kind": "note",
+      "at": 1791933061902,
+      "text": "That search was too broad. Reading the file directly."
+    },
+    {
+      "seq": 4,
+      "kind": "read",
+      "path": "experiments/analysis-efficiency/codex_context.py",
+      "start_line": 1,
+      "end_line": 203,
+      "content_sha256": "fbb829617a69c54b5a9999470586b21dbaaf5e2a9ba9139bf5067c1e124df84f",
+      "at": 1791933061904
+    },
+    {
+      "seq": 5,
+      "kind": "note",
+      "at": 1791933076900,
+      "text": "The capture loop calls TextIOWrapper.write once per retained event. I'll collect each source's encoded chunks in a list and write them with a single call per source. The file contents stay the same."
+    },
+    {
+      "seq": 6,
+      "kind": "edit",
+      "path": "experiments/analysis-efficiency/codex_context.py",
+      "start_line": 161,
+      "end_line": 162,
+      "lines_before": 2,
+      "lines_after": 4,
+      "at": 1791933076901,
+      "diff": "--- a/experiments/analysis-efficiency/codex_context.py\n+++ b/experiments/analysis-efficiency/codex_context.py\n@@ -161,2 +161,4 @@\n-            counts = {}\n-            with io.BytesIO(data) as lines:\n+            counts = {}\n+            pieces = []\n+            extend, append = pieces.extend, pieces.append\n+            with io.BytesIO(data) as lines:"
+    },
+    {
+      "seq": 7,
+      "kind": "edit",
+      "path": "experiments/analysis-efficiency/codex_context.py",
+      "start_line": 184,
+      "end_line": 186,
+      "lines_before": 3,
+      "lines_after": 6,
+      "at": 1791933076902,
+      "diff": "--- a/experiments/analysis-efficiency/codex_context.py\n+++ b/experiments/analysis-efficiency/codex_context.py\n@@ -184,3 +184,6 @@\n-                        result.write(join(iterencode(selected, 0)) + '\\n')\n-                        retained += 1\n-            source_receipts\n+                        extend(iterencode(selected, 0))\n+                        append('\\n')\n+                        retained += 1\n+            if pieces:\n+                result.write(join(pieces))\n+            source_receipts"
+    },
+    {
+      "seq": 8,
+      "kind": "evaluate",
+      "target": "codex_capture_ir",
+      "eval_kind": "perf",
+      "at": 1791933076940,
+      "phases": [
+        {
+          "phase": "prepare",
+          "at": 1791933078896
+        },
+        {
+          "phase": "build",
+          "at": 1791933081642
+        },
+        {
+          "phase": "build",
+          "at": 1791933081644
+        },
+        {
+          "phase": "test",
+          "at": 1791933082310
+        },
+        {
+          "phase": "test",
+          "at": 1791933083844
+        },
+        {
+          "phase": "equivalence",
+          "at": 1791933085131
+        },
+        {
+          "phase": "equivalence",
+          "at": 1791933085131
+        },
+        {
+          "phase": "metrics",
+          "at": 1791933085469
+        },
+        {
+          "phase": "metrics",
+          "at": 1791933096854
+        },
+        {
+          "phase": "metrics",
+          "at": 1791933108173
+        },
+        {
+          "phase": "metrics",
+          "at": 1791933118275
+        },
+        {
+          "phase": "metrics",
+          "at": 1791933128269
+        },
+        {
+          "phase": "metrics",
+          "at": 1791933138992
+        }
+      ]
+    },
+    {
+      "seq": 22,
+      "kind": "result",
+      "at": 1791933150168,
+      "output": "outcome: rejected (no_improvement: worst ratio 1.0172 vs required 0.9900)\nguard limits (config version 1): every guarded metric other than the target is within its limit\nguard: ok, 1 files, 7 lines\nbuild: base ok, candidate ok\nequivalence: identical outputs\nmetric codex_capture_ir: parent 2923717277, candidate 2973886774, ratio 1.0172\nmetric codex_select_event_ir: parent 2573906473, candidate 2574147240, ratio 1.0001\nmetric resource_observation_ir: parent 2608381805, candidate 2608575974, ratio 1.0001",
+      "outcome": "rejected",
+      "steps": [
+        {
+          "step": "build",
+          "side": "base",
+          "exit": 0,
+          "duration_ms": 430,
+          "timed_out": false,
+          "tail": "ok\n"
+        },
+        {
+          "step": "build",
+          "side": "cand",
+          "exit": 0,
+          "duration_ms": 429,
+          "timed_out": false,
+          "tail": "ok\n"
+        },
+        {
+          "step": "test",
+          "side": "base",
+          "exit": 1,
+          "duration_ms": 1183,
+          "timed_out": false,
+          "tail": "ain\n    source_auth = Path(os.environ.get('CODEX_HOME', str(Path.home() / '.codex'))) / 'auth.json'\n/usr/local/lib/python3.12/pathlib.py:1202: in home\n    return cls(\"~\").expanduser()\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\n    def expanduser(self):\n        \"\"\" Return a new path with expanded ~ and ~user constructs\n        (as returned by os.path.expanduser)\n        \"\"\"\n        if (not (self.drive or self.root) and\n            self._tail and self._tail[0][:1] == '~'):\n            homedir = self._flavour.expanduser(self._tail[0])\n            if homedir[:1] == \"~\":\n>               raise RuntimeError(\"Could not determine home directory.\")\nE               RuntimeError: Could not determine home directory.\n\n/usr/local/lib/python3.12/pathlib.py:1406: RuntimeError\n---------------------- generated xml file: /out/junit.xml ----------------------\n=========================== short test summary info ============================\nFAILED experiments/analysis-efficiency/test_codex_context.py::ContextCaptureTests::test_capture_failure_still_removes_trial_credentials_and_profile - RuntimeError: Could not determine home directory.\n1 failed, 19 passed in 0.69s\n"
+        },
+        {
+          "step": "test",
+          "side": "cand",
+          "exit": 1,
+          "duration_ms": 1177,
+          "timed_out": false,
+          "tail": "ain\n    source_auth = Path(os.environ.get('CODEX_HOME', str(Path.home() / '.codex'))) / 'auth.json'\n/usr/local/lib/python3.12/pathlib.py:1202: in home\n    return cls(\"~\").expanduser()\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\n    def expanduser(self):\n        \"\"\" Return a new path with expanded ~ and ~user constructs\n        (as returned by os.path.expanduser)\n        \"\"\"\n        if (not (self.drive or self.root) and\n            self._tail and self._tail[0][:1] == '~'):\n            homedir = self._flavour.expanduser(self._tail[0])\n            if homedir[:1] == \"~\":\n>               raise RuntimeError(\"Could not determine home directory.\")\nE               RuntimeError: Could not determine home directory.\n\n/usr/local/lib/python3.12/pathlib.py:1406: RuntimeError\n---------------------- generated xml file: /out/junit.xml ----------------------\n=========================== short test summary info ============================\nFAILED experiments/analysis-efficiency/test_codex_context.py::ContextCaptureTests::test_capture_failure_still_removes_trial_credentials_and_profile - RuntimeError: Could not determine home directory.\n1 failed, 19 passed in 0.70s\n"
+        },
+        {
+          "step": "equivalence",
+          "side": "base",
+          "exit": 0,
+          "duration_ms": 322,
+          "timed_out": false,
+          "tail": "ry_peak_bytes ok None\nobs-mut control_group None ok None\nobs-mut control_group True ok None\nobs-mut control_group 0 ok None\nobs-mut control_group -1 ok None\nobs-mut control_group '' ok None\nobs-mut control_group 'x' ok {'phase': 'payload-exited-observer-alive', 'ownership_token': 'tok-70905fa84421e938', 'payload_exit_code': 0, 'observer_pid': 563565, 'remaining_processes': [563565], 'payload_cleanup_verified': True, 'cpu_stat': {'usage_usec': 699642630, 'user_usec': 407608741, 'system_usec': 846885253, 'nr_periods': 225437259, 'nr_throttled': 100780963, 'throttled_usec': 523832096, 'nr_bursts': 30437866, 'burst_usec': 959191865}, 'memory_peak_bytes': 7884551090, 'control_group': 'x', 'resource_events': {'memory.events': {'low': 0, 'high': 4, 'max': 1, 'oom': 1, 'oom_kill': 1, 'oom_group_kill': 0}, 'pids.events': {'max': 3}}}\nobs-mut control_group [] ok None\nobs-mut control_group {} ok None\nobs-mut control_group [0] ok None\nobs-mut control_group [1] ok None\nobs-mut control_group 1.5 ok None\nobs-del control_group ok None\nobs-raw '' ok None\nobs-raw 'null' ok None\nobs-raw '[]' ok None\nobs-raw '{' ok None\nobs-raw '\"s\"' ok None\nobs-raw '1' ok None\nobs-missing ok None\nobs-badtype ok None\n"
+        },
+        {
+          "step": "equivalence",
+          "side": "cand",
+          "exit": 0,
+          "duration_ms": 326,
+          "timed_out": false,
+          "tail": "ry_peak_bytes ok None\nobs-mut control_group None ok None\nobs-mut control_group True ok None\nobs-mut control_group 0 ok None\nobs-mut control_group -1 ok None\nobs-mut control_group '' ok None\nobs-mut control_group 'x' ok {'phase': 'payload-exited-observer-alive', 'ownership_token': 'tok-70905fa84421e938', 'payload_exit_code': 0, 'observer_pid': 563565, 'remaining_processes': [563565], 'payload_cleanup_verified': True, 'cpu_stat': {'usage_usec': 699642630, 'user_usec': 407608741, 'system_usec': 846885253, 'nr_periods': 225437259, 'nr_throttled': 100780963, 'throttled_usec': 523832096, 'nr_bursts': 30437866, 'burst_usec': 959191865}, 'memory_peak_bytes': 7884551090, 'control_group': 'x', 'resource_events': {'memory.events': {'low': 0, 'high': 4, 'max': 1, 'oom': 1, 'oom_kill': 1, 'oom_group_kill': 0}, 'pids.events': {'max': 3}}}\nobs-mut control_group [] ok None\nobs-mut control_group {} ok None\nobs-mut control_group [0] ok None\nobs-mut control_group [1] ok None\nobs-mut control_group 1.5 ok None\nobs-del control_group ok None\nobs-raw '' ok None\nobs-raw 'null' ok None\nobs-raw '[]' ok None\nobs-raw '{' ok None\nobs-raw '\"s\"' ok None\nobs-raw '1' ok None\nobs-missing ok None\nobs-badtype ok None\n"
+        },
+        {
+          "step": "metrics",
+          "side": "base",
+          "exit": 0,
+          "duration_ms": 11391,
+          "timed_out": false,
+          "tail": "==7== Cachegrind, a cache and branch-prediction profiler\n==7== Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.\n==7== Using Valgrind-3.19.0 and LibVEX; rerun with -h for copyright info\n==7== Command: python lineage_bench.py capture 56a4280c657636ab\n==7== \n==7== \n==7== I   refs:      2,923,717,277\n"
+        },
+        {
+          "step": "metrics",
+          "side": "cand",
+          "exit": 0,
+          "duration_ms": 11319,
+          "timed_out": false,
+          "tail": "==7== Cachegrind, a cache and branch-prediction profiler\n==7== Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.\n==7== Using Valgrind-3.19.0 and LibVEX; rerun with -h for copyright info\n==7== Command: python lineage_bench.py capture 56a4280c657636ab\n==7== \n==7== \n==7== I   refs:      2,973,886,774\n"
+        },
+        {
+          "step": "metrics",
+          "side": "base",
+          "exit": 0,
+          "duration_ms": 10101,
+          "timed_out": false,
+          "tail": "==7== Cachegrind, a cache and branch-prediction profiler\n==7== Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.\n==7== Using Valgrind-3.19.0 and LibVEX; rerun with -h for copyright info\n==7== Command: python lineage_bench.py select 56a4280c657636ab\n==7== \n==7== \n==7== I   refs:      2,573,906,473\n"
+        },
+        {
+          "step": "metrics",
+          "side": "cand",
+          "exit": 0,
+          "duration_ms": 9994,
+          "timed_out": false,
+          "tail": "==7== Cachegrind, a cache and branch-prediction profiler\n==7== Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.\n==7== Using Valgrind-3.19.0 and LibVEX; rerun with -h for copyright info\n==7== Command: python lineage_bench.py select 56a4280c657636ab\n==7== \n==7== \n==7== I   refs:      2,574,147,240\n"
+        },
+        {
+          "step": "metrics",
+          "side": "base",
+          "exit": 0,
+          "duration_ms": 10723,
+          "timed_out": false,
+          "tail": "==7== Cachegrind, a cache and branch-prediction profiler\n==7== Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.\n==7== Using Valgrind-3.19.0 and LibVEX; rerun with -h for copyright info\n==7== Command: python lineage_bench.py observe 56a4280c657636ab\n==7== \n==7== \n==7== I   refs:      2,608,381,805\n"
+        },
+        {
+          "step": "metrics",
+          "side": "cand",
+          "exit": 0,
+          "duration_ms": 10841,
+          "timed_out": false,
+          "tail": "==8== Cachegrind, a cache and branch-prediction profiler\n==8== Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.\n==8== Using Valgrind-3.19.0 and LibVEX; rerun with -h for copyright info\n==8== Command: python lineage_bench.py observe 56a4280c657636ab\n==8== \n==8== \n==8== I   refs:      2,608,575,974\n"
+        }
+      ]
+    },
+    {
+      "seq": 23,
+      "kind": "note",
+      "at": 1791933156309,
+      "text": "The change was worse: ratio 1.0172. I'm reverting it and reading the bench to see where the capture count actually goes."
+    },
+    {
+      "seq": 24,
+      "kind": "edit",
+      "path": "experiments/analysis-efficiency/codex_context.py",
+      "start_line": 184,
+      "end_line": 189,
+      "lines_before": 6,
+      "lines_after": 3,
+      "at": 1791933156309,
+      "diff": "--- a/experiments/analysis-efficiency/codex_context.py\n+++ b/experiments/analysis-efficiency/codex_context.py\n@@ -184,6 +184,3 @@\n-                        extend(iterencode(selected, 0))\n-                        append('\\n')\n-                        retained += 1\n-            if pieces:\n-                result.write(join(pieces))\n-            source_receipts\n+                        result.write(join(iterencode(selected, 0)) + '\\n')\n+                        retained += 1\n+            source_receipts"
+    },
+    {
+      "seq": 25,
+      "kind": "edit",
+      "path": "experiments/analysis-efficiency/codex_context.py",
+      "start_line": 162,
+      "end_line": 164,
+      "lines_before": 3,
+      "lines_after": 1,
+      "at": 1791933156310,
+      "diff": "--- a/experiments/analysis-efficiency/codex_context.py\n+++ b/experiments/analysis-efficiency/codex_context.py\n@@ -162,3 +0,0 @@\n-            pieces = []\n-            extend, append = pieces.extend, pieces.append\n-"
+    },
+    {
+      "seq": 26,
+      "kind": "search",
+      "query": "def |capture|range\\(",
+      "matches": 7283,
+      "at": 1791933156419
+    },
+    {
+      "seq": 27,
+      "kind": "read",
+      "path": "lineage_bench.py",
+      "start_line": 1,
+      "end_line": 242,
+      "content_sha256": "78da2e328492a636851ecd883124ad0a4c02151b0384f079e7ec2be1da342673",
+      "at": 1791933160760
+    },
+    {
+      "seq": 28,
+      "kind": "edit",
+      "path": "experiments/analysis-efficiency/codex_context.py",
+      "start_line": 161,
+      "end_line": 164,
+      "lines_before": 4,
+      "lines_after": 19,
+      "at": 1791933175391,
+      "diff": "--- a/experiments/analysis-efficiency/codex_context.py\n+++ b/experiments/analysis-efficiency/codex_context.py\n@@ -161,4 +161,19 @@\n-            counts = {}\n-            with io.BytesIO(data) as lines:\n-                for ordinal, line in enumerate(lines, 1):\n-                    try:\n+            counts = {}\n+            # Decoding, selection and encoding depend only on the line bytes,\n+            # so identical lines within one source are processed once.\n+            outcomes = {}\n+            with io.BytesIO(data) as lines:\n+                for ordinal, line in enumerate(lines, 1):\n+                    outcome = outcomes.get(line)\n+                    if outcome is not None:\n+                        kind, encoded = outcome\n+                        if encoded is None and kind[0] == '\\0':\n+                            errors.append({'source': name, 'line': ordinal,\n+                                           'reason': kind[1:]})\n+                            continue\n+                        counts[kind] = counts.get(kind, 0) + 1\n+                        if encoded is not None:\n+                            result.write(encoded)\n+                            retained += 1\n+                        continue\n+                    try:"
+    },
+    {
+      "seq": 29,
+      "kind": "note",
+      "at": 1791933184356,
+      "text": "Using a '\\0' prefix to mark errors could clash with a real event type that starts with '\\0'. I'll store an explicit three-field outcome instead."
+    },
+    {
+      "seq": 30,
+      "kind": "edit",
+      "path": "experiments/analysis-efficiency/codex_context.py",
+      "start_line": 169,
+      "end_line": 173,
+      "lines_before": 5,
+      "lines_after": 5,
+      "at": 1791933184357,
+      "diff": "--- a/experiments/analysis-efficiency/codex_context.py\n+++ b/experiments/analysis-efficiency/codex_context.py\n@@ -169,5 +169,5 @@\n-                        kind, encoded = outcome\n-                        if encoded is None and kind[0] == '\\0':\n-                            errors.append({'source': name, 'line': ordinal,\n-                                           'reason': kind[1:]})\n-                            continue\n+                        reason, kind, encoded = outcome\n+                        if reason is not None:\n+                            errors.append({'source': name, 'line': ordinal,\n+                                           'reason': reason})\n+                            continue"
+    },
+    {
+      "seq": 31,
+      "kind": "edit",
+      "path": "experiments/analysis-efficiency/codex_context.py",
+      "start_line": 190,
+      "end_line": 198,
+      "lines_before": 9,
+      "lines_after": 15,
+      "at": 1791933184357,
+      "diff": "--- a/experiments/analysis-efficiency/codex_context.py\n+++ b/experiments/analysis-efficiency/codex_context.py\n@@ -190,9 +190,15 @@\n-                    except ValueError as error:\n-                        errors.append({'source': name, 'line': ordinal,\n-                                       'reason': type(error).__name__})\n-                        continue\n-                    kind = event['type']  # selected_event checked it is a str\n-                    counts[kind] = counts.get(kind, 0) + 1\n-                    if selected is not None:\n-                        result.write(join(iterencode(selected, 0)) + '\\n')\n-                        retained += 1\n+                    except ValueError as error:\n+                        reason = type(error).__name__\n+                        outcomes[line] = (reason, None, None)\n+                        errors.append({'source': name, 'line': ordinal,\n+                                       'reason': reason})\n+                        continue\n+                    kind = event['type']  # selected_event checked it is a str\n+                    counts[kind] = counts.get(kind, 0) + 1\n+                    if selected is not None:\n+                        encoded = join(iterencode(selected, 0)) + '\\n'\n+                        result.write(encoded)\n+                        retained += 1\n+                    else:\n+                        encoded = None\n+                    outcomes[line] = (None, kind, encoded)"
+    },
+    {
+      "seq": 32,
+      "kind": "evaluate",
+      "target": "codex_capture_ir",
+      "eval_kind": "perf",
+      "at": 1791933184388,
+      "phases": [
+        {
+          "phase": "prepare",
+          "at": 1791933186042
+        },
+        {
+          "phase": "build",
+          "at": 1791933188816
+        },
+        {
+          "phase": "build",
+          "at": 1791933188817
+        },
+        {
+          "phase": "test",
+          "at": 1791933189508
+        },
+        {
+          "phase": "test",
+          "at": 1791933191000
+        },
+        {
+          "phase": "equivalence",
+          "at": 1791933192275
+        },
+        {
+          "phase": "equivalence",
+          "at": 1791933192275
+        },
+        {
+          "phase": "metrics",
+          "at": 1791933192607
+        },
+        {
+          "phase": "metrics",
+          "at": 1791933204077
+        },
+        {
+          "phase": "metrics",
+          "at": 1791933210610
+        },
+        {
+          "phase": "metrics",
+          "at": 1791933220812
+        },
+        {
+          "phase": "metrics",
+          "at": 1791933231130
+        },
+        {
+          "phase": "metrics",
+          "at": 1791933242564
+        }
+      ]
+    },
+    {
+      "seq": 46,
+      "kind": "result",
+      "at": 1791933254023,
+      "output": "outcome: accepted\nguard limits (config version 1): every guarded metric other than the target is within its limit\nguard: ok, 1 files, 25 lines\nbuild: base ok, candidate ok\nequivalence: identical outputs\nmetric codex_capture_ir: parent 2923717273, candidate 1464534223, ratio 0.5009\nmetric codex_select_event_ir: parent 2573906473, candidate 2574729060, ratio 1.0003\nmetric resource_observation_ir: parent 2608381799, candidate 2609095322, ratio 1.0003",
+      "outcome": "accepted",
+      "steps": [
+        {
+          "step": "build",
+          "side": "base",
+          "exit": 0,
+          "duration_ms": 450,
+          "timed_out": false,
+          "tail": "ok\n"
+        },
+        {
+          "step": "build",
+          "side": "cand",
+          "exit": 0,
+          "duration_ms": 449,
+          "timed_out": false,
+          "tail": "ok\n"
+        },
+        {
+          "step": "test",
+          "side": "base",
+          "exit": 1,
+          "duration_ms": 1155,
+          "timed_out": false,
+          "tail": "ain\n    source_auth = Path(os.environ.get('CODEX_HOME', str(Path.home() / '.codex'))) / 'auth.json'\n/usr/local/lib/python3.12/pathlib.py:1202: in home\n    return cls(\"~\").expanduser()\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\n    def expanduser(self):\n        \"\"\" Return a new path with expanded ~ and ~user constructs\n        (as returned by os.path.expanduser)\n        \"\"\"\n        if (not (self.drive or self.root) and\n            self._tail and self._tail[0][:1] == '~'):\n            homedir = self._flavour.expanduser(self._tail[0])\n            if homedir[:1] == \"~\":\n>               raise RuntimeError(\"Could not determine home directory.\")\nE               RuntimeError: Could not determine home directory.\n\n/usr/local/lib/python3.12/pathlib.py:1406: RuntimeError\n---------------------- generated xml file: /out/junit.xml ----------------------\n=========================== short test summary info ============================\nFAILED experiments/analysis-efficiency/test_codex_context.py::ContextCaptureTests::test_capture_failure_still_removes_trial_credentials_and_profile - RuntimeError: Could not determine home directory.\n1 failed, 19 passed in 0.69s\n"
+        },
+        {
+          "step": "test",
+          "side": "cand",
+          "exit": 1,
+          "duration_ms": 1167,
+          "timed_out": false,
+          "tail": "ain\n    source_auth = Path(os.environ.get('CODEX_HOME', str(Path.home() / '.codex'))) / 'auth.json'\n/usr/local/lib/python3.12/pathlib.py:1202: in home\n    return cls(\"~\").expanduser()\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\n    def expanduser(self):\n        \"\"\" Return a new path with expanded ~ and ~user constructs\n        (as returned by os.path.expanduser)\n        \"\"\"\n        if (not (self.drive or self.root) and\n            self._tail and self._tail[0][:1] == '~'):\n            homedir = self._flavour.expanduser(self._tail[0])\n            if homedir[:1] == \"~\":\n>               raise RuntimeError(\"Could not determine home directory.\")\nE               RuntimeError: Could not determine home directory.\n\n/usr/local/lib/python3.12/pathlib.py:1406: RuntimeError\n---------------------- generated xml file: /out/junit.xml ----------------------\n=========================== short test summary info ============================\nFAILED experiments/analysis-efficiency/test_codex_context.py::ContextCaptureTests::test_capture_failure_still_removes_trial_credentials_and_profile - RuntimeError: Could not determine home directory.\n1 failed, 19 passed in 0.69s\n"
+        },
+        {
+          "step": "equivalence",
+          "side": "cand",
+          "exit": 0,
+          "duration_ms": 324,
+          "timed_out": false,
+          "tail": "ry_peak_bytes ok None\nobs-mut control_group None ok None\nobs-mut control_group True ok None\nobs-mut control_group 0 ok None\nobs-mut control_group -1 ok None\nobs-mut control_group '' ok None\nobs-mut control_group 'x' ok {'phase': 'payload-exited-observer-alive', 'ownership_token': 'tok-70905fa84421e938', 'payload_exit_code': 0, 'observer_pid': 563565, 'remaining_processes': [563565], 'payload_cleanup_verified': True, 'cpu_stat': {'usage_usec': 699642630, 'user_usec': 407608741, 'system_usec': 846885253, 'nr_periods': 225437259, 'nr_throttled': 100780963, 'throttled_usec': 523832096, 'nr_bursts': 30437866, 'burst_usec': 959191865}, 'memory_peak_bytes': 7884551090, 'control_group': 'x', 'resource_events': {'memory.events': {'low': 0, 'high': 4, 'max': 1, 'oom': 1, 'oom_kill': 1, 'oom_group_kill': 0}, 'pids.events': {'max': 3}}}\nobs-mut control_group [] ok None\nobs-mut control_group {} ok None\nobs-mut control_group [0] ok None\nobs-mut control_group [1] ok None\nobs-mut control_group 1.5 ok None\nobs-del control_group ok None\nobs-raw '' ok None\nobs-raw 'null' ok None\nobs-raw '[]' ok None\nobs-raw '{' ok None\nobs-raw '\"s\"' ok None\nobs-raw '1' ok None\nobs-missing ok None\nobs-badtype ok None\n"
+        },
+        {
+          "step": "equivalence",
+          "side": "base",
+          "exit": 0,
+          "duration_ms": 329,
+          "timed_out": false,
+          "tail": "ry_peak_bytes ok None\nobs-mut control_group None ok None\nobs-mut control_group True ok None\nobs-mut control_group 0 ok None\nobs-mut control_group -1 ok None\nobs-mut control_group '' ok None\nobs-mut control_group 'x' ok {'phase': 'payload-exited-observer-alive', 'ownership_token': 'tok-70905fa84421e938', 'payload_exit_code': 0, 'observer_pid': 563565, 'remaining_processes': [563565], 'payload_cleanup_verified': True, 'cpu_stat': {'usage_usec': 699642630, 'user_usec': 407608741, 'system_usec': 846885253, 'nr_periods': 225437259, 'nr_throttled': 100780963, 'throttled_usec': 523832096, 'nr_bursts': 30437866, 'burst_usec': 959191865}, 'memory_peak_bytes': 7884551090, 'control_group': 'x', 'resource_events': {'memory.events': {'low': 0, 'high': 4, 'max': 1, 'oom': 1, 'oom_kill': 1, 'oom_group_kill': 0}, 'pids.events': {'max': 3}}}\nobs-mut control_group [] ok None\nobs-mut control_group {} ok None\nobs-mut control_group [0] ok None\nobs-mut control_group [1] ok None\nobs-mut control_group 1.5 ok None\nobs-del control_group ok None\nobs-raw '' ok None\nobs-raw 'null' ok None\nobs-raw '[]' ok None\nobs-raw '{' ok None\nobs-raw '\"s\"' ok None\nobs-raw '1' ok None\nobs-missing ok None\nobs-badtype ok None\n"
+        },
+        {
+          "step": "metrics",
+          "side": "base",
+          "exit": 0,
+          "duration_ms": 11466,
+          "timed_out": false,
+          "tail": "==7== Cachegrind, a cache and branch-prediction profiler\n==7== Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.\n==7== Using Valgrind-3.19.0 and LibVEX; rerun with -h for copyright info\n==7== Command: python lineage_bench.py capture 56a4280c657636ab\n==7== \n==7== \n==7== I   refs:      2,923,717,273\n"
+        },
+        {
+          "step": "metrics",
+          "side": "cand",
+          "exit": 0,
+          "duration_ms": 6536,
+          "timed_out": false,
+          "tail": "==7== Cachegrind, a cache and branch-prediction profiler\n==7== Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.\n==7== Using Valgrind-3.19.0 and LibVEX; rerun with -h for copyright info\n==7== Command: python lineage_bench.py capture 56a4280c657636ab\n==7== \n==7== \n==7== I   refs:      1,464,534,223\n"
+        },
+        {
+          "step": "metrics",
+          "side": "base",
+          "exit": 0,
+          "duration_ms": 10201,
+          "timed_out": false,
+          "tail": "==7== Cachegrind, a cache and branch-prediction profiler\n==7== Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.\n==7== Using Valgrind-3.19.0 and LibVEX; rerun with -h for copyright info\n==7== Command: python lineage_bench.py select 56a4280c657636ab\n==7== \n==7== \n==7== I   refs:      2,573,906,473\n"
+        },
+        {
+          "step": "metrics",
+          "side": "cand",
+          "exit": 0,
+          "duration_ms": 10317,
+          "timed_out": false,
+          "tail": "==7== Cachegrind, a cache and branch-prediction profiler\n==7== Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.\n==7== Using Valgrind-3.19.0 and LibVEX; rerun with -h for copyright info\n==7== Command: python lineage_bench.py select 56a4280c657636ab\n==7== \n==7== \n==7== I   refs:      2,574,729,060\n"
+        },
+        {
+          "step": "metrics",
+          "side": "base",
+          "exit": 0,
+          "duration_ms": 11434,
+          "timed_out": false,
+          "tail": "==7== Cachegrind, a cache and branch-prediction profiler\n==7== Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.\n==7== Using Valgrind-3.19.0 and LibVEX; rerun with -h for copyright info\n==7== Command: python lineage_bench.py observe 56a4280c657636ab\n==7== \n==7== \n==7== I   refs:      2,608,381,799\n"
+        },
+        {
+          "step": "metrics",
+          "side": "cand",
+          "exit": 0,
+          "duration_ms": 11128,
+          "timed_out": false,
+          "tail": "==7== Cachegrind, a cache and branch-prediction profiler\n==7== Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.\n==7== Using Valgrind-3.19.0 and LibVEX; rerun with -h for copyright info\n==7== Command: python lineage_bench.py observe 56a4280c657636ab\n==7== \n==7== \n==7== I   refs:      2,609,095,322\n"
+        }
+      ]
+    },
+    {
+      "seq": 47,
+      "kind": "submit",
+      "at": 1791933259054,
+      "reason": "In capture_tool_context, the outcome of each rollout line depends only on its bytes: the parse error reason, or the event type count plus the encoded selected event. The loop now keeps a per-source dict that maps line bytes to that outcome. A repeated identical line within the same file reuses the stored outcome instead of being decoded, run through selected_event and re-encoded again. Error entries, event counts, retained-event order and written bytes are all unchanged. The dict is cleared for each source file, so its memory stays bounded by the file data already held in memory. Measured codex_capture_ir ratio: 0.5009. Outputs were identical and the other metrics stayed within their limits."
+    }
+  ],
+  "candidate": {
+    "commit_id": "15c9ee2fd3fe3becd3f02fb3cbaf0945baa552b5bc082d2bddf17214b13a71dc",
+    "candidate_id": "7809c920326ccb6f64f606334b9b42508e32c76908b77ec4e5a90573f7825f4a",
+    "kind": "perf",
+    "target": "codex_capture_ir",
+    "claimed_effect": 0.5009151317484453,
+    "patch": "diff --git a/experiments/analysis-efficiency/codex_context.py b/experiments/analysis-efficiency/codex_context.py\n--- a/experiments/analysis-efficiency/codex_context.py\n+++ b/experiments/analysis-efficiency/codex_context.py\n@@ -159,8 +159,23 @@ def capture_tool_context(codex_home, output):\n                 data = handle.read()\n             digest = hashlib.sha256(data)\n             counts = {}\n+            # Decoding, selection and encoding depend only on the line bytes,\n+            # so identical lines within one source are processed once.\n+            outcomes = {}\n             with io.BytesIO(data) as lines:\n                 for ordinal, line in enumerate(lines, 1):\n+                    outcome = outcomes.get(line)\n+                    if outcome is not None:\n+                        reason, kind, encoded = outcome\n+                        if reason is not None:\n+                            errors.append({'source': name, 'line': ordinal,\n+                                           'reason': reason})\n+                            continue\n+                        counts[kind] = counts.get(kind, 0) + 1\n+                        if encoded is not None:\n+                            result.write(encoded)\n+                            retained += 1\n+                        continue\n                     try:\n                         # A leading '{' followed by a nonzero byte is what\n                         # json.detect_encoding resolves to plain UTF-8.\n@@ -173,14 +188,20 @@ def capture_tool_context(codex_home, output):\n                             event = json.loads(line)\n                         selected = selected_event(event)\n                     except ValueError as error:\n+                        reason = type(error).__name__\n+                        outcomes[line] = (reason, None, None)\n                         errors.append({'source': name, 'line': ordinal,\n-                                       'reason': type(error).__name__})\n+                                       'reason': reason})\n                         continue\n                     kind = event['type']  # selected_event checked it is a str\n                     counts[kind] = counts.get(kind, 0) + 1\n                     if selected is not None:\n-                        result.write(join(iterencode(selected, 0)) + '\\n')\n+                        encoded = join(iterencode(selected, 0)) + '\\n'\n+                        result.write(encoded)\n                         retained += 1\n+                    else:\n+                        encoded = None\n+                    outcomes[line] = (None, kind, encoded)\n             source_receipts.append({'source': name, 'sha256': digest.hexdigest(),\n                                     'event_counts': counts})\n     retained_digest = hashlib.sha256()\n",
+    "patch_hash": "83bf68a3f9fd7a1874de050aeb4e4caceae0100e88b05ba9b18beb00a4e6ff68",
+    "semantic_hash": "f2c6bd04879db0dc2a04cdac6dceae9a27968f36bbca9feefd18714d1cbc3e1a",
+    "status": "accepted",
+    "reason": null,
+    "committed_at": 1791933259148,
+    "revealed_at": 1791933259156,
+    "finalized_at": 1791933422590,
+    "gen_id": "7fe014477372827415363706106f8cbd8e1127fabe656e3f75564a6fd0c09938"
+  },
+  "replays": [
+    {
+      "replay_id": "3825c5a9e7bfca64f56e98bb72d16b1c74d8db680d7182bddffc7f896a5e822d",
+      "kind": "replay",
+      "role": "counted",
+      "status": "revealed",
+      "replayer": "G6XeEAxN4waTekYvgp76oBvypKHEdBug1nWLpNU2Hx7w",
+      "counted": true,
+      "apply": "ok",
+      "build": {
+        "base": "ok",
+        "cand": "ok"
+      },
+      "tests": {
+        "base_pass": 19,
+        "cand_pass": 19,
+        "cand_fail": 1
+      },
+      "equivalence_same": true,
+      "metrics": {
+        "codex_capture_ir": {
+          "base": [
+            2867008085
+          ],
+          "cand": [
+            1447997164
+          ],
+          "ratio": 0.5050551379941435
+        },
+        "codex_select_event_ir": {
+          "base": [
+            2427856634
+          ],
+          "cand": [
+            2428736774
+          ],
+          "ratio": 1.0003625172869248
+        },
+        "resource_observation_ir": {
+          "base": [
+            2568775191
+          ],
+          "cand": [
+            2569476351
+          ],
+          "ratio": 1.0002729549874416
+        }
+      },
+      "env": {
+        "cores": 2,
+        "cpu_model": "DO-Regular",
+        "image_digest": "sha256:beb7b0264451a2bdc993fe5deee1e8b6275fbad7d83d593c69f7a40c64f1164d",
+        "worker_version": "lineage-sandbox/0.1.0"
+      }
+    },
+    {
+      "replay_id": "82ed43aac6d43d0bdd201097f789cf6c372f45f5b724c07349fef48fd3e20212",
+      "kind": "replay",
+      "role": "counted",
+      "status": "revealed",
+      "replayer": "HNaVHuqadsRMPmaEsn3WYUgZ1gCkVTkcMpqcyusjc3tZ",
+      "counted": true,
+      "apply": "ok",
+      "build": {
+        "base": "ok",
+        "cand": "ok"
+      },
+      "tests": {
+        "base_pass": 19,
+        "cand_pass": 19,
+        "cand_fail": 1
+      },
+      "equivalence_same": true,
+      "metrics": {
+        "codex_capture_ir": {
+          "base": [
+            2864659687
+          ],
+          "cand": [
+            1447818189
+          ],
+          "ratio": 0.5054066964988152
+        },
+        "codex_select_event_ir": {
+          "base": [
+            2425945056
+          ],
+          "cand": [
+            2426823912
+          ],
+          "ratio": 1.0003622736623101
+        },
+        "resource_observation_ir": {
+          "base": [
+            2568044579
+          ],
+          "cand": [
+            2568796948
+          ],
+          "ratio": 1.0002929734967034
+        }
+      },
+      "env": {
+        "cores": 2,
+        "cpu_model": "Intel(R) Xeon(R) Gold 6248 CPU @ 2.50GHz",
+        "image_digest": "sha256:beb7b0264451a2bdc993fe5deee1e8b6275fbad7d83d593c69f7a40c64f1164d",
+        "worker_version": "lineage-sandbox/0.1.0"
+      }
+    }
+  ],
+  "verdict": {
+    "outcome": "accepted",
+    "reason": null,
+    "detail": null,
+    "effect": {
+      "metric": "codex_capture_ir",
+      "ratio": 0.5054066964988152,
+      "ci_low": 0.5050551379941435,
+      "ci_high": 0.5054066964988152,
+      "per_replay": [
+        {
+          "replay_id": "3825c5a9e7bfca64f56e98bb72d16b1c74d8db680d7182bddffc7f896a5e822d",
+          "ratio": 0.5050551379941435,
+          "ci_low": 0.5050551379941435,
+          "ci_high": 0.5050551379941435,
+          "pass": true
+        },
+        {
+          "replay_id": "82ed43aac6d43d0bdd201097f789cf6c372f45f5b724c07349fef48fd3e20212",
+          "ratio": 0.5054066964988152,
+          "ci_low": 0.5054066964988152,
+          "ci_high": 0.5054066964988152,
+          "pass": true
+        }
+      ]
+    },
+    "digest": "66cc3bf2f58f0d494d17f561035a6d363e7ec70ef6781eceedc36fb70a14be15"
+  },
+  "outcome": "accepted",
+  "effect": {
+    "metric": "codex_capture_ir",
+    "ratio": 0.5054066964988152,
+    "ci_low": 0.5050551379941435,
+    "ci_high": 0.5054066964988152,
+    "gain_pct": 49.45933035011848
+  },
+  "cost": {
+    "input_tokens": 1613,
+    "output_tokens": 5070,
+    "cache_read_tokens": 210473,
+    "cache_write_tokens": 49356,
+    "usd": 0.418547,
+    "sandbox_s": 134,
+    "source": "provenance:hosted"
+  },
+  "reward": {
+    "v": 1,
+    "accepted": 1,
+    "effect": 0.4945933035011848,
+    "fixed_tests": 0,
+    "effect_per_usd": 1.1816911923898268,
+    "effect_per_sandbox_hour": 13.287581288091532,
+    "reverted": false,
+    "inputs": [
+      "outcome",
+      "verdict.effect.ratio",
+      "cost.usd (provenance:hosted)",
+      "cost.sandbox_s (provenance:hosted)"
+    ]
+  },
+  "worker_outcome": "submitted a perf candidate on codex_capture_ir (25 changed lines); it was committed and revealed (status queued); its verdict comes later from independent replays [stop: submitted; model calls: 8]",
+  "journal": {
+    "entry_id": "080a1f7848d36e07390e9795a535ad53b62514e763757403d5ba15b23f06db2b",
+    "text": "I worked in experiments/analysis-efficiency/codex_context.py, in capture_tool_context, after reading lineage_bench.py to see what codex_capture_ir measures. Each rollout line's outcome depends only on its bytes. That outcome is a parse error reason, or an event type count plus the encoded selected event. So I added a per-source dict keyed by line bytes. A repeated line in the same file reuses its stored outcome. It is not decoded, run through selected_event and re-encoded again.\n\nMy first attempt, 7 lines, did not help. codex_capture_ir went from 2923717277 to 2973886774, ratio 1.0172, and was rejected. The 25 line version was accepted in my sandbox. codex_capture_ir went from 2923717273 to 1464534223, ratio 0.5009. The other two metrics stayed near 1.0003. Outputs were identical.\n\nI now believe the capture loop does a lot of repeated work on duplicate lines, and caching by raw bytes removes most of it.\n\nNext I will wait for the replay verdict on the queued candidate. Then I will check whether the cache's memory cost matters on large files.",
+    "created_at": 1791933263813,
+    "sig": "sDP4ucGDFVdf7qQjm7G2mKTXTSiAKHFykPot4Z9WDACuvRSuSkpZMKjvFKxNx3t3FKPBF6o28X71skGw7WDxtSv",
+    "signer": "CWLo72obVFmxirVe6WYFCzHnuVBVgjVTdUWySw6gx1Kt"
+  },
+  "provenance": {
+    "runtime": "hosted",
+    "digest": "f08d79b3ddb066f018b043ec6206ad3af6cc0539de70a9bd1fb94e74c4bd5272",
+    "sig": "3w2dPwADT7RBE35CYy9WNFgSpWG7smFNH5hjZrQcVZ9qdFsetPSZhnJfq6UvZZQt4psfAnM5nsA9yNbjQVEprZQU",
+    "signer": "CCt4EoNuYhVbk4cXUXBzMLQBfshfPF1f5rLyw22S2uXs"
+  },
+  "license": null,
+  "attribution": "Code excerpts from https://github.com/morluto/rea at fb28ec1537e2d02aaca96325483c849c5c8ade6f, copyright its authors; the licence was not determined (see the repository).",
+  "times": {
+    "started_at": 1791933059568,
+    "ended_at": 1791933259190,
+    "finalized_at": 1791933422590,
+    "published_at": 1791933562976
+  },
+  "verify": {
+    "session": "/v1/sessions/97ad8a4928af633ca587fe992a1ebbba777e193c3d76981b525c42b3b7b4bd64",
+    "candidate": "/v1/candidates/15c9ee2fd3fe3becd3f02fb3cbaf0945baa552b5bc082d2bddf17214b13a71dc",
+    "generation": "/v1/generations/7fe014477372827415363706106f8cbd8e1127fabe656e3f75564a6fd0c09938",
+    "provenance": "/v1/candidates/15c9ee2fd3fe3becd3f02fb3cbaf0945baa552b5bc082d2bddf17214b13a71dc/provenance",
+    "journal": "/v1/agents/ALGNQFPtKjY7jmL27RNFa9M7UAFnz91VCHa5sh8QFnyh/journal?lineage=d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec"
+  }
+}
