@@ -1,6 +1,6 @@
 # Lessons: rea
 
-Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 33 published attempts.
+Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 34 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -14,17 +14,24 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:hits_ir
 
-- Attempts: 19 (14 accepted, 2 rejected, 3 no candidate)
+- Attempts: 20 (15 accepted, 2 rejected, 3 no candidate)
 - Best accepted effect: 20.45% (ratio 0.7955), episode `0542a96fab94`
-- Accepted effects: 20.45%, 15.33%, 9.30%, 8.00%, 6.92%, 6.81%, 6.70%, 4.76%, 3.24%, 2.20%, 1.91%, 1.68%, 1.19%, 1.06%
+- Accepted effects: 20.45%, 15.33%, 9.30%, 8.00%, 6.92%, 6.81%, 6.70%, 4.76%, 3.24%, 2.20%, 1.91%, 1.68%, 1.19%, 1.07%, 1.06%
 - Why candidates failed: stale_conflict (1), no_improvement (1)
 - Files changed by accepted candidates: `bridge/native/rea_lldb_tracer.py`
 - Files changed by rejected candidates: `bridge/native/rea_lldb_tracer.py`
-- Median model spend per attempt: 0.3684 USD (over 19 attempts with a recorded cost)
+- Median model spend per attempt: 0.3737 USD (over 20 attempts with a recorded cost)
 
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I worked on the per-hit path in _handle_breakpoint in bridge/native/rea_lldb_tracer.py. _record_json now returns the encoded record as a (head, tail) pair, split at the empty backtrace. That way the journal row no longer partitions the record text to find that point. Unexpected value types still go through _encode_json and are split the same way. I also moved the cache-hit path of _frame_location into the backtrace loop.
+> The first evaluation, with 130 changed lines, was rejected. hits_ir went from 531651582 to 527402817, ratio 0.9920, and the required ratio was 0.9900. The third evaluation, with 155 lines, was accepted at 523498695, ratio 0.9847. report_ir rose to 478131099, ratio 1.0076, and that stayed within its guard. Outputs were identical in both runs.
+> My reading is that most of the per-hit cost is in record encoding and frame lookup. Avoiding the partition alone was not enough.
+> Next, I would look at why report_ir rose about as much as hits_ir fell. The candidate is queued for replay.
+>
+> 2026-10-13, episode `27cf399fabe3` (accepted)
 
 > I worked in bridge/native/rea_lldb_tracer.py on the per-hit path. _record_json walked each record's register dicts a second time to encode them. Every register cost dict lookups, type checks, a cache lookup and an encode_basestring_ascii call. _record_estimate already has each register name and hex value in hand while it builds them, so I changed it to also build the encoded register objects. It uses the same cached name prefix. _record_json now reuses that work. The change is 54 lines in one file.
 > In my sandbox the candidate was accepted with identical outputs and both builds ok. hits_ir went from 583016391 to 574007150, ratio 0.9845. report_ir went from 489297505 to 490041498, ratio 1.0015. That is a small cost on the report side.
@@ -53,13 +60,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next, look at why report_ir rises and check the backtrace frame path for the same pattern.
 >
 > 2026-10-13, episode `68b80abc03b4` (accepted)
-
-> I worked in bridge/native/rea_lldb_tracer.py on the per-location loop in _breakpoint_report. I made two edits, at lines 847-892 and then 865-893. The goal was fewer checks and fewer tuple lookups for each location. I read lineage_bench.py and lineage_fakelldb.py first to see what the benchmark exercises.
-> The sandbox measured report_ir at 491378643 for the parent and 491621433 for the candidate, a ratio of 1.0005. The required ratio was 0.9900, so it was rejected as no_improvement. hits_ir went from 595593614 to 597558911, ratio 1.0033. Outputs were identical, the build was ok and the guard was ok. The change did not help. I submitted no candidate.
-> I now think the tracer's own share of report_ir is small. The fake SB calls in lineage_fakelldb.py are trivial. Address and module resolution is already cached per call. Tidying the loop cannot move a number it barely owns.
-> Next time, profile report_ir first to see where the cost actually sits, maybe in lineage_bench.py itself, before editing _breakpoint_report again.
->
-> 2026-10-13, episode `7fc013febf9b` (no candidate)
 
 ## Licence
 
