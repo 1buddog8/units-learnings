@@ -1,16 +1,16 @@
 # Lessons: rea
 
-Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 28 published attempts.
+Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 29 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
 ## Target perf:report_ir
 
-- Attempts: 12 (9 accepted, 3 no candidate)
+- Attempts: 13 (9 accepted, 4 no candidate)
 - Best accepted effect: 34.92% (ratio 0.6508), episode `d02dad97cc12`
 - Accepted effects: 34.92%, 16.74%, 10.08%, 4.12%, 3.50%, 2.45%, 2.32%, 1.99%, 1.24%
 - Files changed by accepted candidates: `bridge/native/rea_lldb_tracer.py`
-- Median model spend per attempt: 0.3403 USD (over 12 attempts with a recorded cost)
+- Median model spend per attempt: 0.3751 USD (over 13 attempts with a recorded cost)
 
 ## Target perf:hits_ir
 
@@ -25,6 +25,13 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I worked in bridge/native/rea_lldb_tracer.py on the per-location loop in _breakpoint_report. I made two edits, at lines 847-892 and then 865-893. The goal was fewer checks and fewer tuple lookups for each location. I read lineage_bench.py and lineage_fakelldb.py first to see what the benchmark exercises.
+> The sandbox measured report_ir at 491378643 for the parent and 491621433 for the candidate, a ratio of 1.0005. The required ratio was 0.9900, so it was rejected as no_improvement. hits_ir went from 595593614 to 597558911, ratio 1.0033. Outputs were identical, the build was ok and the guard was ok. The change did not help. I submitted no candidate.
+> I now think the tracer's own share of report_ir is small. The fake SB calls in lineage_fakelldb.py are trivial. Address and module resolution is already cached per call. Tidying the loop cannot move a number it barely owns.
+> Next time, profile report_ir first to see where the cost actually sits, maybe in lineage_bench.py itself, before editing _breakpoint_report again.
+>
+> 2026-10-13, episode `7fc013febf9b` (no candidate)
 
 > I worked in bridge/native/rea_lldb_tracer.py on the per-hit register path. _record_estimate called _read_register once for each argument register, and each call built a new lldb.SBError. I moved those reads inline so they share one SBError. A failure still raises before the next read, so the error state and the messages stay the same. I also changed how _record_json encodes register names.
 > The first version, 18 lines, took hits_ir from 601127471 to 594553196, a ratio of 0.9891. report_ir went to 1.0019. The second version, 33 lines, took hits_ir from 601127465 to 592481119, a ratio of 0.9856, and report_ir came in at 0.9988. Both runs gave identical outputs and passed the guard. I submitted the 33-line candidate. It is queued for independent replays.
@@ -53,13 +60,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next, I want to look at the small report_ir rise. I also want to profile the remaining per-hit JSON encoding.
 >
 > 2026-10-13, episode `49a78338255d` (accepted)
-
-> I moved three module-level imports in bridge/native/rea_lldb_tracer.py into the functions that use them. threading now loads in _OutputPipe.__init__ and start, select in _OutputPipe._reader_loop, and hashlib in _hash_file. The logic is unchanged. Before editing, I searched for outside references such as tracer.threading and found nothing that depended on the old names.
-> Evaluated on hits_ir, the change was rejected. hits_ir went from 631322986 to 626391348, a ratio of 0.9922, and it needed 0.9900. Evaluated on report_ir, it was accepted. report_ir went from 495610469 to 489512847, a ratio of 0.9877. Outputs were identical, and the guard passed with 1 file and 11 lines changed. I submitted it on report_ir. It is queued for replay.
-> I now believe that import cost in this tracer is a small but real share of report_ir. For hits_ir, deferring imports does not save enough to pass the threshold.
-> Next, I would profile what else the tracer loads at startup on the hits path. I would also check whether other heavy imports can move into the functions that use them.
->
-> 2026-10-13, episode `f9114477ce09` (accepted)
 
 ## Licence
 
