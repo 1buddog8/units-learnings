@@ -1,6 +1,6 @@
 # Lessons: rea
 
-Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 13 published attempts.
+Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 14 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -14,17 +14,24 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:hits_ir
 
-- Attempts: 5 (3 accepted, 1 rejected, 1 no candidate)
+- Attempts: 6 (4 accepted, 1 rejected, 1 no candidate)
 - Best accepted effect: 15.33% (ratio 0.8467), episode `8579b7963c0d`
-- Accepted effects: 15.33%, 8.00%, 6.92%
+- Accepted effects: 15.33%, 8.00%, 6.92%, 1.06%
 - Why candidates failed: stale_conflict (1)
 - Files changed by accepted candidates: `bridge/native/rea_lldb_tracer.py`
 - Files changed by rejected candidates: `bridge/native/rea_lldb_tracer.py`
-- Median model spend per attempt: 0.2663 USD (over 5 attempts with a recorded cost)
+- Median model spend per attempt: 0.2944 USD (over 6 attempts with a recorded cost)
 
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I changed _handle_breakpoint in bridge/native/rea_lldb_tracer.py, lines 495-522. Its backtrace loop read context["retained_trace_bytes"], context["target"], record["backtrace"] and thread.GetFrameAtIndex on every frame. None of these change inside the loop. They are now read once before it. The remaining trace budget, MAX_TRACE_BYTES minus retained bytes, is also computed once. The budget checks became exact integer inequalities. 28 lines became 22.
+> My sandbox run on hits_ir was accepted. Both builds were ok, outputs were identical, and the guard passed with 1 file and 26 lines. hits_ir went from 942020790 to 930970966, ratio 0.9883. report_ir went from 509972393 to 510383728, ratio 1.0008, which is within its guard limit. That is my measurement, not a verdict. The candidate is queued for replay.
+> The per-frame loop costs something, but it is not where most of hits_ir goes. Lookup hoisting gives a small gain.
+> Next I should profile what each hit spends outside the loop, especially json.dumps and the argument_registers path.
+>
+> 2026-10-13, episode `d4087fe98d17` (accepted)
 
 > I read bridge/native/rea_lldb_tracer.py, lineage_bench.py and lineage_fakelldb.py to look for remaining cost in _breakpoint_report. I made no edits and ran no sandbox evaluations.
 > The per-location work left in _breakpoint_report is already covered by two candidates still waiting on replays. One adds an early exit when no symbol-prefix filter applies. The other measures location size with the C string encoder. Any edit I could make to that function would rewrite the same lines. So I stopped without submitting a change.
@@ -53,13 +60,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next I would check whether the symbol text formatting can share work with the JSON size estimate.
 >
 > 2026-10-13, episode `8dffc51330f8` (accepted)
-
-> I worked in bridge/native/rea_lldb_tracer.py, in _breakpoint_report. Some cases have no symbol-prefix filter and MAX_REPORTED_LOCATIONS already retained. There, the remaining locations of a breakpoint can only add to the count. So now they are counted directly, without resolving each address. I also made the per-address cache entry keep the location's computed sizes. A repeated address no longer rebuilds the tuple key and looks it up in the size dict. That took two edits, at lines 586-595 and 612-622.
-> My sandbox run on report_ir was accepted. Outputs were identical, both builds passed, and every guarded metric stayed within its limit. report_ir went from 562740980 to 542380939, ratio 0.9638. hits_ir barely moved, 970795379 to 969217208, ratio 0.9984. That is my own measurement, not a verdict. The candidate is queued for replay.
-> Most of the cost in this report is per-location address work. Skipping it once nothing more can be retained helps. The hits path does not share that cost much.
-> Next, I would profile the hits path separately. I would also look at whether _location resolution can reuse the same cache.
->
-> 2026-10-13, episode `22ad89c7626e` (accepted)
 
 ## Licence
 
