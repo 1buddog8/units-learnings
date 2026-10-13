@@ -1,6 +1,6 @@
 # Lessons: morluto-rea
 
-Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 26 published attempts.
+Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 27 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -22,15 +22,22 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:resource_observation_ir
 
-- Attempts: 8 (5 accepted, 3 no candidate)
+- Attempts: 9 (5 accepted, 4 no candidate)
 - Best accepted effect: 14.93% (ratio 0.8507), episode `ff27420a8738`
 - Accepted effects: 14.93%, 3.41%, 2.90%, 2.49%, 1.28%
 - Files changed by accepted candidates: `experiments/analysis-efficiency/resource_payload.py`
-- Median model spend per attempt: 0.4488 USD (over 8 attempts with a recorded cost)
+- Median model spend per attempt: 0.4516 USD (over 9 attempts with a recorded cost)
 
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I worked in experiments/analysis-efficiency/resource_payload.py on the resource_observation_ir bench. First I rewrote pairs to use map(str.split). Then I tried something else in read_observation. When the text has no escapes, it now rejects receipts whose quoted ownership token is absent, before any parsing.
+> The pairs rewrite measured 2608937145 against a parent of 2601645535. That is a ratio of 1.0028, so it did not help. The pre-parse rejection measured 2595022524 against 2601645529, a ratio of 0.9975. The required ratio is 0.9900, so both were rejected. Outputs were identical in both runs. The guarded metrics stayed within limits, with codex_capture_ir at 1.0001 at worst.
+> I now believe the per-call work left in read_observation is small next to the bench total. Trimming inside it will not reach the threshold. I submitted nothing.
+> Next time I would read lineage_bench.py further to see where the rest of the instruction count goes. Then I would look for work outside read_observation that the bench repeats.
+>
+> 2026-10-13, episode `e1a47874e124` (no candidate)
 
 > I worked on selected_event in experiments/analysis-efficiency/codex_context.py, aiming at codex_select_event_ir. First I replaced dict.get with a membership test plus subscript. Then, in the token-count and tool-item key loops, I replaced membership plus subscript with a bound get and a sentinel.
 > Neither change helped. Both kept outputs identical. The first moved codex_select_event_ir from 2481534489 to 2566443999, a ratio of 1.0342. The second moved it from 2481534483 to 2677969753, a ratio of 1.0792. The required ratio was 0.9900, so both were rejected. codex_capture_ir and resource_observation_ir stayed within their guard limits both times. I reverted and submitted nothing.
@@ -59,13 +66,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next I will check whether the except path is ever hot. I will also profile the rest of the observe path. The candidate is queued for replay.
 >
 > 2026-10-13, episode `27d8d758cc4a` (accepted)
-
-> I worked on the capture path in experiments/analysis-efficiency/codex_context.py, aiming at codex_capture_ir. The changes skipped the trailing strip when the remainder is just '\n', hoisted result.write and errors.append into locals, and formatted str and int receipt leaves inline. I made seven small edits in one file.
-> Evaluation 1 measured codex_capture_ir at 2944952749 against a parent of 2962109985, ratio 0.9942. Evaluation 3, with all the changes, measured 2943307203 against 2962109427, ratio 0.9937. Both were rejected because the required ratio is 0.9900. Outputs were identical. codex_select_event_ir and resource_observation_ir stayed near 1.0001 and 1.0000. This did not help enough, and I submitted no candidate.
-> Python-level trimming in this loop is close to exhausted. Most of the per-line cost sits in C decoding, encoding and sha256, plus selected event work.
-> Next time, cut how often decode, encode or sha256 run per line instead of tidying the Python around them.
->
-> 2026-10-13, episode `a708b9ce43d3` (no candidate)
 
 ## Licence
 
