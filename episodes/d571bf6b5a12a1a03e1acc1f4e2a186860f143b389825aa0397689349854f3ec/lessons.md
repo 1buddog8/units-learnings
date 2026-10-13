@@ -1,16 +1,16 @@
 # Lessons: morluto-rea
 
-Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 18 published attempts.
+Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 19 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
 ## Target perf:codex_select_event_ir
 
-- Attempts: 5 (3 accepted, 2 no candidate)
+- Attempts: 6 (3 accepted, 3 no candidate)
 - Best accepted effect: 11.87% (ratio 0.8813), episode `468e974ddf79`
 - Accepted effects: 11.87%, 10.81%, 1.65%
 - Files changed by accepted candidates: `experiments/analysis-efficiency/codex_context.py`
-- Median model spend per attempt: 0.5401 USD (over 5 attempts with a recorded cost)
+- Median model spend per attempt: 0.4781 USD (over 6 attempts with a recorded cost)
 
 ## Target perf:codex_capture_ir
 
@@ -31,6 +31,13 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I worked on selected_event in experiments/analysis-efficiency/codex_context.py, targeting codex_select_event_ir. I read the file and the bench section of lineage_bench.py. Then I tried two micro-optimisations. The first used dict comprehensions. The second used only exact-type fast paths in the validation.
+> The comprehension version was rejected. codex_select_event_ir went from 2793206629 to 3008968014, ratio 1.0772, so it got worse. On this Python each comprehension creates its own function, and that costs more than it saves. The fast-path version was also rejected. It measured 2793206635 to 2786780124, ratio 0.9977, against a required 0.9900. Outputs were identical in both runs and the guards were ok.
+> The validation in selected_event is already cheap. Much of the benchmark's instruction count seems to sit outside it. I submitted no candidate.
+> Next time I will profile where codex_select_event_ir actually spends its instructions before editing anything. I should look at the bench setup and the parsing around response_item and token_count, not selected_event itself.
+>
+> 2026-10-13, episode `55d5d102041e` (no candidate)
 
 > I worked on capture_tool_context in experiments/analysis-efficiency/codex_context.py, the line loop that feeds codex_capture_ir. I tried two behaviour-preserving changes. First, I collected each source's encoded events and wrote them once per source. Second, I split the file data with bytes.split instead of iterating a BytesIO, and skipped the trailing strip when the scanner ends at end of line.
 > Both kept outputs identical and both made the target worse. The first change measured codex_capture_ir at 3233500370 against a parent of 3181776031, a ratio of 1.0163. The second measured 3309981653 against 3181786771, a ratio of 1.0403. The required ratio was 0.9900. Both were rejected and I submitted no candidate.
@@ -59,13 +66,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next, I want to look at what else runs per retained event in the encode path. The search for capture was too broad, with 6605 matches, so I should narrow it to the hot loop.
 >
 > 2026-10-13, episode `17a2b3d428f1` (accepted)
-
-> I worked in experiments/analysis-efficiency/codex_context.py, in capture_tool_context. It wrote context-receipt.json with json.dumps(receipt, indent=2). With indent set, json uses its slower pure-Python encoder, and the receipt holds one dict per source plus one per rejected line.
-> The first attempt changed 15 lines and was rejected. codex_capture_ir went from 2963969029 to 2958660828, ratio 0.9982, against a required 0.9900. It did not help enough. I then added a helper, _indented_json, that produces the same indent=2 text for the receipt's own value types: str-keyed dicts, lists, str and int. That run changed 41 lines and was accepted in my sandbox. codex_capture_ir went from 2963969148 to 2918335025, ratio 0.9846. Outputs were identical. The other guarded metrics stayed within limits.
-> The receipt serialization is a real cost here, but a modest one. I submitted it. It is queued for independent replays.
-> Next, I want to look at what else capture_tool_context builds per source, and whether lineage_bench.py exercises large receipts.
->
-> 2026-10-13, episode `99bf6fec5235` (accepted)
 
 ## Licence
 
