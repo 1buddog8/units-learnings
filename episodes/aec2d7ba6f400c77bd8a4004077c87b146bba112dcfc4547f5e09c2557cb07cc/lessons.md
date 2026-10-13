@@ -1,16 +1,16 @@
 # Lessons: rea
 
-Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 39 published attempts.
+Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 40 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
 ## Target perf:report_ir
 
-- Attempts: 15 (9 accepted, 6 no candidate)
+- Attempts: 16 (9 accepted, 7 no candidate)
 - Best accepted effect: 34.92% (ratio 0.6508), episode `d02dad97cc12`
 - Accepted effects: 34.92%, 16.74%, 10.08%, 4.12%, 3.50%, 2.45%, 2.32%, 1.99%, 1.24%
 - Files changed by accepted candidates: `bridge/native/rea_lldb_tracer.py`
-- Median model spend per attempt: 0.3951 USD (over 15 attempts with a recorded cost)
+- Median model spend per attempt: 0.4441 USD (over 16 attempts with a recorded cost)
 
 ## Target perf:hits_ir
 
@@ -25,6 +25,13 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I tried a leaner inner loop in _breakpoint_report in bridge/native/rea_lldb_tracer.py. I replaced repeated len() calls and global lookups with a local append and a counter. There were three small edits around lines 907, 924 and 956.
+> It did not help. In my sandbox evaluation the outputs were identical and the build passed. report_ir went from 496494755 to 497076292, a ratio of 1.0012. The required ratio was 0.9900, so the evaluation rejected it with no_improvement. hits_ir went from 496134728 to 496044174, a ratio of 0.9998. I did not submit a candidate.
+> I now believe the report loop is a negligible share of report_ir. hits_ir and report_ir both sit near 496M instructions. That means a shared fixed cost dominates both, not the code that builds the report.
+> Next time I will measure where that shared fixed cost lives before editing anything. I would start with tracer setup and how lineage_bench.py loads the tracer through lineage_fakelldb.py. Micro-tuning _breakpoint_report again is not worth the time.
+>
+> 2026-10-13, episode `fea32001f136` (no candidate)
 
 > I removed dead code from bridge/native/rea_lldb_tracer.py. The first attempt took out the unused _location_sizes/_LOCATION_SIZES cache, the registers_text=None fallback in _record_json, and _record as well. The second attempt put _record back and kept only the first two removals.
 > The first attempt changed outputs on seeded inputs and was rejected. It measured hits_ir 512639624 to 509079270, ratio 0.9931, and report_ir ratio 0.9933. The second attempt gave identical outputs. It measured hits_ir 512639624 to 510756333, ratio 0.9963, and report_ir ratio 0.9944. The bar is 0.9900, so it did not help enough. I submitted nothing.
@@ -53,13 +60,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next time I should measure what lineage_bench.py spends before any hit happens, such as setup and import in the tracer and the fake LLDB, and only then look at per-hit code.
 >
 > 2026-10-13, episode `d2084b692f3f` (no candidate)
-
-> I worked on per-hit cost in bridge/native/rea_lldb_tracer.py. The journal row is now built as one list and joined once. It goes through a new _ObservationJournal.append_line, which takes text already ending in its newline, and append_json delegates to it. Before, prefix, head, backtrace, tail and newline were concatenated, copying the growing row several times. I also reworked backtrace frame memoisation around _new_frame_location and _frame_module_names.
-> The first sandbox run gave hits_ir 516773816 to 515352235, ratio 0.9972. That was rejected against the required 0.9900. The second gave 0.9916, also rejected. The third gave 508395005, ratio 0.9838, and was accepted. report_ir stayed near flat at 0.9992, and outputs were identical each time. The verdict waits on replays.
-> I now think the per-hit string building and frame lookups are where hits_ir goes. Each piece alone moved it very little.
-> Next I want to profile the remaining per-hit path past the journal write and see what dominates now.
->
-> 2026-10-13, episode `882f8f7415df` (accepted)
 
 ## Licence
 
