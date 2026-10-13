@@ -1,16 +1,16 @@
 # Lessons: morluto-rea
 
-Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 28 published attempts.
+Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 29 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
 ## Target perf:codex_select_event_ir
 
-- Attempts: 7 (3 accepted, 4 no candidate)
+- Attempts: 8 (4 accepted, 4 no candidate)
 - Best accepted effect: 11.87% (ratio 0.8813), episode `468e974ddf79`
-- Accepted effects: 11.87%, 10.81%, 1.65%
+- Accepted effects: 11.87%, 10.81%, 1.65%, 1.15%
 - Files changed by accepted candidates: `experiments/analysis-efficiency/codex_context.py`
-- Median model spend per attempt: 0.4161 USD (over 7 attempts with a recorded cost)
+- Median model spend per attempt: 0.4781 USD (over 8 attempts with a recorded cost)
 
 ## Target perf:codex_capture_ir
 
@@ -31,6 +31,13 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I worked in experiments/analysis-efficiency/codex_context.py on selected_event. It called the private helper _select_token_counts once for every token_usage_record and token_count event, so each of those events paid for one Python call frame. I moved that loop inline. The two branches now set up their source mapping and key tuple and share one copy of it. Key order, checks and error messages are unchanged.
+> The first attempt did not help. codex_select_event_ir went from 2590269871 to 2799625434, ratio 1.0808, and was rejected. The second reached 0.9914, still short of the required 0.9900. The third measured 2555469088, ratio 0.9866, and was accepted in my sandbox. Outputs were identical every time, and codex_capture_ir and resource_observation_ir stayed within their limits.
+> I now think call overhead in this path is real but small, and the shape of the inlined loop decides whether it pays off.
+> Next I would wait for the replays, then look at the other per-event branches in selected_event for the same helper-call pattern.
+>
+> 2026-10-13, episode `f4bdc96de979` (accepted)
 
 > I worked in experiments/analysis-efficiency/codex_context.py, in capture_tool_context, after reading lineage_bench.py to see what codex_capture_ir measures. Each rollout line's outcome depends only on its bytes. That outcome is a parse error reason, or an event type count plus the encoded selected event. So I added a per-source dict keyed by line bytes. A repeated line in the same file reuses its stored outcome. It is not decoded, run through selected_event and re-encoded again.
 > My first attempt, 7 lines, did not help. codex_capture_ir went from 2923717277 to 2973886774, ratio 1.0172, and was rejected. The 25 line version was accepted in my sandbox. codex_capture_ir went from 2923717273 to 1464534223, ratio 0.5009. The other two metrics stayed near 1.0003. Outputs were identical.
@@ -59,13 +66,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next, profile capture_tool_context before editing to find where the instructions actually go. Look at the JSON parsing and the hashing rather than the decoding.
 >
 > 2026-10-13, episode `35126dc558b5` (no candidate)
-
-> I changed read_observation in experiments/analysis-efficiency/resource_payload.py. The old code ran per-value loops to check that each value in memory.events, pids.events and cpu_stat was an int and non-negative. I replaced those loops with a set(map(type, ...)) type check plus min(). I also adjusted the imports at the top of the file.
-> Outputs stayed identical and both builds passed. resource_observation_ir went from 2611810851 to 2790100985, a ratio of 1.0683. The required ratio was 0.9900, so the change was rejected. codex_capture_ir was at 1.0000 and codex_select_event_ir at 1.0001. The change did not help. I submitted nothing.
-> On this interpreter the plain per-value loops are cheaper than building a set and calling min(). These dictionaries are small, so the extra C calls and the temporary set cost more than they save.
-> Next time I would look at where read_observation spends its time before touching the checks. Parsing or file reads may matter more than the validation loops.
->
-> 2026-10-13, episode `16870cdd1862` (no candidate)
 
 ## Licence
 
