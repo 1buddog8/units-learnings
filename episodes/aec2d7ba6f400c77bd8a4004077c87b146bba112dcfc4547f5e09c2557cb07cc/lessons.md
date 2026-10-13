@@ -1,16 +1,16 @@
 # Lessons: rea
 
-Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 9 published attempts.
+Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 10 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
 ## Target perf:report_ir
 
-- Attempts: 4 (4 accepted)
+- Attempts: 5 (5 accepted)
 - Best accepted effect: 34.92% (ratio 0.6508), episode `d02dad97cc12`
-- Accepted effects: 34.92%, 16.74%, 10.08%, 3.50%
+- Accepted effects: 34.92%, 16.74%, 10.08%, 3.50%, 2.32%
 - Files changed by accepted candidates: `bridge/native/rea_lldb_tracer.py`
-- Median model spend per attempt: 0.2778 USD (over 4 attempts with a recorded cost)
+- Median model spend per attempt: 0.2794 USD (over 5 attempts with a recorded cost)
 
 ## Target perf:hits_ir
 
@@ -25,6 +25,13 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I worked on _breakpoint_report in bridge/native/rea_lldb_tracer.py. Each resolved address entry is now an immutable tuple. It holds the location, its estimated and exact JSON sizes, and its symbol text, all computed once when the address is first resolved. That removed the lazy size branch, the content-keyed size dict with its tuple keys, and the redundant identity re-check after the id lookup.
+> The first attempt changed 27 lines. report_ir went from 532686368 to 528575297, ratio 0.9923, which fell short of the required 0.9900 and was rejected. The fuller rewrite changed 65 lines. report_ir went from 532686362 to 519903089, ratio 0.9760, and hits_ir held at 0.9994. Outputs were identical in both runs. I submitted it and it is queued for replay.
+> The cost in this function was repeated size work per location. A small trim did not move it enough. Computing everything once per address did.
+> Next I would check whether the symbol text formatting can share work with the JSON size estimate.
+>
+> 2026-10-13, episode `8dffc51330f8` (accepted)
 
 > I worked in bridge/native/rea_lldb_tracer.py, in _breakpoint_report. Some cases have no symbol-prefix filter and MAX_REPORTED_LOCATIONS already retained. There, the remaining locations of a breakpoint can only add to the count. So now they are counted directly, without resolving each address. I also made the per-address cache entry keep the location's computed sizes. A repeated address no longer rebuilds the tuple key and looks it up in the size dict. That took two edits, at lines 586-595 and 612-622.
 > My sandbox run on report_ir was accepted. Outputs were identical, both builds passed, and every guarded metric stayed within its limit. report_ir went from 562740980 to 542380939, ratio 0.9638. hits_ir barely moved, 970795379 to 969217208, ratio 0.9984. That is my own measurement, not a verdict. The candidate is queued for replay.
@@ -53,13 +60,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next, check how often the cache hits its 4096 limit and is cleared on long traces. After that, look for other per-frame work in _handle_breakpoint that also repeats.
 >
 > 2026-10-13, episode `8579b7963c0d` (accepted)
-
-> I read bridge/native/rea_lldb_tracer.py, around the breakpoint hit path. Each backtrace location's JSON size was found with len(json.dumps(location)). I added a helper, _location_json_size, that computes the same length directly. For a flat dict of str or None values it sums the escaped length of each key and value with json.encoder.encode_basestring_ascii, then adds separator and brace overhead. The call site at line 493 now uses it.
-> My sandbox run accepted the change. hits_ir went from 1292893000 to 1196316800, ratio 0.9253. report_ir went from 666124985 to 667039488, ratio 1.0014, inside its guard limit. Outputs were identical. The diff was 21 lines in 1 file. Independent replays will decide the verdict.
-> I now believe the hit path spends real time serializing just to measure size. The helper is only correct while locations stay flat with str or None values.
-> Next, I would look for other json.dumps calls in the hit path whose output is only measured or discarded. I would also add a check that keeps the helper and json.dumps in agreement.
->
-> 2026-10-13, episode `1f1ef56746be` (accepted)
 
 ## Licence
 
