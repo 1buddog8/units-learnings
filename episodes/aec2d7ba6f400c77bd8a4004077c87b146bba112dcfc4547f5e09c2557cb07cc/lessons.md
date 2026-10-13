@@ -1,6 +1,6 @@
 # Lessons: rea
 
-Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 38 published attempts.
+Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 39 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -14,17 +14,24 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:hits_ir
 
-- Attempts: 23 (16 accepted, 2 rejected, 5 no candidate)
+- Attempts: 24 (16 accepted, 2 rejected, 6 no candidate)
 - Best accepted effect: 20.45% (ratio 0.7955), episode `0542a96fab94`
 - Accepted effects: 20.45%, 15.33%, 9.30%, 8.00%, 6.92%, 6.81%, 6.70%, 4.76%, 3.24%, 2.20%, 1.91%, 1.68%, 1.68%, 1.19%, 1.07%, 1.06%
 - Why candidates failed: stale_conflict (1), no_improvement (1)
 - Files changed by accepted candidates: `bridge/native/rea_lldb_tracer.py`
 - Files changed by rejected candidates: `bridge/native/rea_lldb_tracer.py`
-- Median model spend per attempt: 0.3830 USD (over 23 attempts with a recorded cost)
+- Median model spend per attempt: 0.3924 USD (over 24 attempts with a recorded cost)
 
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I removed dead code from bridge/native/rea_lldb_tracer.py. The first attempt took out the unused _location_sizes/_LOCATION_SIZES cache, the registers_text=None fallback in _record_json, and _record as well. The second attempt put _record back and kept only the first two removals.
+> The first attempt changed outputs on seeded inputs and was rejected. It measured hits_ir 512639624 to 509079270, ratio 0.9931, and report_ir ratio 0.9933. The second attempt gave identical outputs. It measured hits_ir 512639624 to 510756333, ratio 0.9963, and report_ir ratio 0.9944. The bar is 0.9900, so it did not help enough. I submitted nothing.
+> _record is not dead. Something reaches it, and removing it changes output. The cache and the fallback really are unused, but they cost almost nothing. Trimming dead code in this file will not move hits_ir to the bar.
+> Next time, find out who calls _record before touching it. Then profile the hot per-hit path in the tracer for real work to cut.
+>
+> 2026-10-13, episode `f781f54fbcec` (no candidate)
 
 > I tried two changes in bridge/native/rea_lldb_tracer.py. In _handle_breakpoint I rebuilt the journal row as one format string, and I counted the separators in the frame loop instead of branching on each frame. I also removed the unused _location_sizes cache, which replaced 15 lines with 2.
 > The build passed for base and candidate, and the outputs were identical. hits_ir went from 519046438 to 520052376, a ratio of 1.0019 against the required 0.9900. report_ir went from 477762924 to 476558865, a ratio of 0.9975. The change did not help, so I stopped and did not submit a candidate.
@@ -53,13 +60,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next I want to profile the remaining per-hit path past the journal write and see what dominates now.
 >
 > 2026-10-13, episode `882f8f7415df` (accepted)
-
-> I worked on the per-hit path in _handle_breakpoint in bridge/native/rea_lldb_tracer.py. _record_json now returns the encoded record as a (head, tail) pair, split at the empty backtrace. That way the journal row no longer partitions the record text to find that point. Unexpected value types still go through _encode_json and are split the same way. I also moved the cache-hit path of _frame_location into the backtrace loop.
-> The first evaluation, with 130 changed lines, was rejected. hits_ir went from 531651582 to 527402817, ratio 0.9920, and the required ratio was 0.9900. The third evaluation, with 155 lines, was accepted at 523498695, ratio 0.9847. report_ir rose to 478131099, ratio 1.0076, and that stayed within its guard. Outputs were identical in both runs.
-> My reading is that most of the per-hit cost is in record encoding and frame lookup. Avoiding the partition alone was not enough.
-> Next, I would look at why report_ir rose about as much as hits_ir fell. The candidate is queued for replay.
->
-> 2026-10-13, episode `27cf399fabe3` (accepted)
 
 ## Licence
 
