@@ -1,6 +1,6 @@
 # Lessons: morluto-rea
 
-Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 24 published attempts.
+Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 25 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -14,11 +14,11 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:codex_capture_ir
 
-- Attempts: 10 (7 accepted, 3 no candidate)
+- Attempts: 11 (7 accepted, 4 no candidate)
 - Best accepted effect: 6.56% (ratio 0.9344), episode `cdb3d8811d87`
 - Accepted effects: 6.56%, 4.83%, 4.76%, 3.90%, 1.63%, 1.61%, 1.60%
 - Files changed by accepted candidates: `experiments/analysis-efficiency/codex_context.py`
-- Median model spend per attempt: 0.3807 USD (over 10 attempts with a recorded cost)
+- Median model spend per attempt: 0.3851 USD (over 11 attempts with a recorded cost)
 
 ## Target perf:resource_observation_ir
 
@@ -31,6 +31,13 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I tried a change in experiments/analysis-efficiency/codex_context.py, in the capture loop at lines 161-173. Each rollout file was decoded once and split on '\n', instead of decoding every line on its own. If the whole-file decode hit invalid UTF-8, the code fell back to decoding line by line.
+> Outputs were identical, and the build and guard passed. codex_capture_ir went from parent 2967170421 to candidate 2992476137, a ratio of 1.0085 against the required 0.9900, so the change was rejected. codex_select_event_ir moved by a ratio of 1.0007, and resource_observation_ir by 1.0006. The change did not help, and I reverted it to a single line.
+> The seeded inputs contain malformed lines. Many files fail the whole-file decode and then get decoded a second time. The per-line decode was never a large cost here.
+> Next, profile capture_tool_context before editing to find where the instructions actually go. Look at the JSON parsing and the hashing rather than the decoding.
+>
+> 2026-10-13, episode `35126dc558b5` (no candidate)
 
 > I changed read_observation in experiments/analysis-efficiency/resource_payload.py. The old code ran per-value loops to check that each value in memory.events, pids.events and cpu_stat was an int and non-negative. I replaced those loops with a set(map(type, ...)) type check plus min(). I also adjusted the imports at the top of the file.
 > Outputs stayed identical and both builds passed. resource_observation_ir went from 2611810851 to 2790100985, a ratio of 1.0683. The required ratio was 0.9900, so the change was rejected. codex_capture_ir was at 1.0000 and codex_select_event_ir at 1.0001. The change did not help. I submitted nothing.
@@ -59,13 +66,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next, I will wait for the replay verdict on the 6-line candidate. Then I will reread codex_context.py to see why capture got slower.
 >
 > 2026-10-13, episode `b7299d0cfe02` (accepted)
-
-> I changed read_observation in experiments/analysis-efficiency/resource_payload.py. It validated a decoded receipt by reading the same keys several times, with value.get followed by value[...] for control_group, observer_pid, memory_peak_bytes and payload_cleanup_verified, and then again when it built the result. It also looped over constant tuples for the three integer fields and the required event keys. Now each field is read once into a local, and the tuple loops are written out. I also trimmed lines 13-15.
-> In my sandbox run, resource_observation_ir went from 2784905942 to 2697920380, a ratio of 0.9688. codex_capture_ir moved to 1.0006 and codex_select_event_ir to 1.0001, both inside the guard limits. Outputs were identical. The candidate is queued for independent replay.
-> I now believe repeated dict lookups and small constant loops make up a real share of this path's cost. The JSON decoding is not all of it.
-> Next I would look at how the decoded receipt is built before read_observation sees it, to check whether decoding work can shrink too.
->
-> 2026-10-13, episode `481fd48b2ff4` (accepted)
 
 ## Licence
 
