@@ -1,6 +1,6 @@
 # Lessons: rea
 
-Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 29 published attempts.
+Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 30 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -14,17 +14,24 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:hits_ir
 
-- Attempts: 16 (12 accepted, 2 rejected, 2 no candidate)
+- Attempts: 17 (13 accepted, 2 rejected, 2 no candidate)
 - Best accepted effect: 20.45% (ratio 0.7955), episode `0542a96fab94`
-- Accepted effects: 20.45%, 15.33%, 9.30%, 8.00%, 6.92%, 6.81%, 6.70%, 4.76%, 3.24%, 2.20%, 1.19%, 1.06%
+- Accepted effects: 20.45%, 15.33%, 9.30%, 8.00%, 6.92%, 6.81%, 6.70%, 4.76%, 3.24%, 2.20%, 1.91%, 1.19%, 1.06%
 - Why candidates failed: stale_conflict (1), no_improvement (1)
 - Files changed by accepted candidates: `bridge/native/rea_lldb_tracer.py`
 - Files changed by rejected candidates: `bridge/native/rea_lldb_tracer.py`
-- Median model spend per attempt: 0.3586 USD (over 16 attempts with a recorded cost)
+- Median model spend per attempt: 0.3614 USD (over 17 attempts with a recorded cost)
 
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I worked on per-hit cost in bridge/native/rea_lldb_tracer.py. In _record_estimate I stopped calling _read_register once per argument register. That helper made a new SBError on every call. The registers are now read inline, in one loop with one shared SBError, and the same loop builds the register dicts and their size estimate. A failed read still raises with the same message before the next register is read. I also made smaller edits around lines 358, 590 and 620.
+> Evaluation 1 at 30 lines: hits_ir went from 561919898 to 556259858, ratio 0.9899. report_ir moved to 496812103, ratio 1.0027. Evaluation 3 at 49 lines: hits_ir 552966343, ratio 0.9841, and report_ir 497805367, ratio 1.0047. Both builds were fine, outputs were identical, and guards held. The candidate is submitted and queued for replay.
+> Allocation per register read was real cost in the hit path. The gains are small and report_ir drifts up a little.
+> Next, look at why report_ir rises and check the backtrace frame path for the same pattern.
+>
+> 2026-10-13, episode `68b80abc03b4` (accepted)
 
 > I worked in bridge/native/rea_lldb_tracer.py on the per-location loop in _breakpoint_report. I made two edits, at lines 847-892 and then 865-893. The goal was fewer checks and fewer tuple lookups for each location. I read lineage_bench.py and lineage_fakelldb.py first to see what the benchmark exercises.
 > The sandbox measured report_ir at 491378643 for the parent and 491621433 for the candidate, a ratio of 1.0005. The required ratio was 0.9900, so it was rejected as no_improvement. hits_ir went from 595593614 to 597558911, ratio 1.0033. Outputs were identical, the build was ok and the guard was ok. The change did not help. I submitted no candidate.
@@ -53,13 +60,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next I would look at why report_ir rose. I would also read the rest of _record_estimate for other generic sizing calls.
 >
 > 2026-10-13, episode `8fea2998249b` (accepted)
-
-> I worked on the per-hit backtrace path in bridge/native/rea_lldb_tracer.py. In _frame_location I added a bounded _FRAME_MODULES dict keyed by id(module). Each entry holds the module itself, so the id cannot be reused. This is the same pattern _report_location already uses. It skips IsValid, GetFileSpec, GetFilename and str for modules we have already seen. I also made smaller edits near lines 92, 380, 595 and 614.
-> Evaluation 1, with 20 changed lines, moved hits_ir from 601536896 to 594469701, ratio 0.9883. Evaluation 3, with 26 lines, reached 588810766, ratio 0.9788. Both runs gave identical outputs. report_ir rose slightly, to ratio 1.0016 and then 1.0018, within guard limits. I submitted the 26-line candidate. It is queued for replay, and these numbers are mine, not a verdict.
-> Repeated module lookups per frame are a real cost in this path. Caching them helps by about two percent.
-> Next, I want to look at the small report_ir rise. I also want to profile the remaining per-hit JSON encoding.
->
-> 2026-10-13, episode `49a78338255d` (accepted)
 
 ## Licence
 
