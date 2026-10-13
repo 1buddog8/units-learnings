@@ -1,16 +1,16 @@
 # Lessons: morluto-rea
 
-Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 25 published attempts.
+Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 26 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
 ## Target perf:codex_select_event_ir
 
-- Attempts: 6 (3 accepted, 3 no candidate)
+- Attempts: 7 (3 accepted, 4 no candidate)
 - Best accepted effect: 11.87% (ratio 0.8813), episode `468e974ddf79`
 - Accepted effects: 11.87%, 10.81%, 1.65%
 - Files changed by accepted candidates: `experiments/analysis-efficiency/codex_context.py`
-- Median model spend per attempt: 0.4781 USD (over 6 attempts with a recorded cost)
+- Median model spend per attempt: 0.4161 USD (over 7 attempts with a recorded cost)
 
 ## Target perf:codex_capture_ir
 
@@ -31,6 +31,13 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I worked on selected_event in experiments/analysis-efficiency/codex_context.py, aiming at codex_select_event_ir. First I replaced dict.get with a membership test plus subscript. Then, in the token-count and tool-item key loops, I replaced membership plus subscript with a bound get and a sentinel.
+> Neither change helped. Both kept outputs identical. The first moved codex_select_event_ir from 2481534489 to 2566443999, a ratio of 1.0342. The second moved it from 2481534483 to 2677969753, a ratio of 1.0792. The required ratio was 0.9900, so both were rejected. codex_capture_ir and resource_observation_ir stayed within their guard limits both times. I reverted and submitted nothing.
+> On this interpreter, the lookups in selected_event already use the cheapest form I could find. Swapping one lookup idiom for another only added cost.
+> Next time I would stop tuning the lookups. I would read how selected_event walks its events and look for repeated work or a loop that can exit early.
+>
+> 2026-10-13, episode `f4758fbc1912` (no candidate)
 
 > I tried a change in experiments/analysis-efficiency/codex_context.py, in the capture loop at lines 161-173. Each rollout file was decoded once and split on '\n', instead of decoding every line on its own. If the whole-file decode hit invalid UTF-8, the code fell back to decoding line by line.
 > Outputs were identical, and the build and guard passed. codex_capture_ir went from parent 2967170421 to candidate 2992476137, a ratio of 1.0085 against the required 0.9900, so the change was rejected. codex_select_event_ir moved by a ratio of 1.0007, and resource_observation_ir by 1.0006. The change did not help, and I reverted it to a single line.
@@ -59,13 +66,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next time, cut how often decode, encode or sha256 run per line instead of tidying the Python around them.
 >
 > 2026-10-13, episode `a708b9ce43d3` (no candidate)
-
-> I worked on two files in morluto-rea. First I edited codex_context.py around the capture path, in three small edits and then a full rewrite of the file. Then I edited read_observation in resource_payload.py, lines 51-53. It called the JSON whitespace regex twice per receipt, building a match object each time. Now it only runs the regex when the first character is JSON whitespace or the text is empty, and checks the tail the same way.
-> The codex_context.py change did not help. codex_capture_ir went from 2869456507 to 2893207521, ratio 1.0083, against a required 0.9900, so it was rejected. The read_observation change was accepted in my sandbox. resource_observation_ir went from 2716588289 to 2622577172, ratio 0.9654, with identical outputs and the other guarded metrics within limits.
-> I now believe receipts usually carry no leading or trailing whitespace, so skipping the regex in that common case pays off. My capture edits added work rather than removing it.
-> Next, I will wait for the replay verdict on the 6-line candidate. Then I will reread codex_context.py to see why capture got slower.
->
-> 2026-10-13, episode `b7299d0cfe02` (accepted)
 
 ## Licence
 
