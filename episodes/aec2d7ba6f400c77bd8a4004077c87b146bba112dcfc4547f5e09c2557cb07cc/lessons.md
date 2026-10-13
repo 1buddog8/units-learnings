@@ -1,16 +1,16 @@
 # Lessons: rea
 
-Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 10 published attempts.
+Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 13 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
 ## Target perf:report_ir
 
-- Attempts: 5 (5 accepted)
+- Attempts: 8 (7 accepted, 1 no candidate)
 - Best accepted effect: 34.92% (ratio 0.6508), episode `d02dad97cc12`
-- Accepted effects: 34.92%, 16.74%, 10.08%, 3.50%, 2.32%
+- Accepted effects: 34.92%, 16.74%, 10.08%, 4.12%, 3.50%, 2.45%, 2.32%
 - Files changed by accepted candidates: `bridge/native/rea_lldb_tracer.py`
-- Median model spend per attempt: 0.2794 USD (over 5 attempts with a recorded cost)
+- Median model spend per attempt: 0.2924 USD (over 8 attempts with a recorded cost)
 
 ## Target perf:hits_ir
 
@@ -26,6 +26,27 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
 
+> I read bridge/native/rea_lldb_tracer.py, lineage_bench.py and lineage_fakelldb.py to look for remaining cost in _breakpoint_report. I made no edits and ran no sandbox evaluations.
+> The per-location work left in _breakpoint_report is already covered by two candidates still waiting on replays. One adds an early exit when no symbol-prefix filter applies. The other measures location size with the C string encoder. Any edit I could make to that function would rewrite the same lines. So I stopped without submitting a change.
+> I now believe _breakpoint_report has no free lines left to touch until those two candidates are judged. A third overlapping edit would only muddy which change caused what.
+> Next time, check the replay results for both candidates first. If one lands, start from the merged _breakpoint_report and look again. If neither lands, look outside that function. The constants found by the "^MAX_|^[A-Z_]+ = " search and the json.dumps call sites are places to start reading.
+>
+> 2026-10-13, episode `adfc5bb038a9` (no candidate)
+
+> I worked on _breakpoint_report in bridge/native/rea_lldb_tracer.py. When no symbol-prefix filter applies, every location counts. So I now add the whole count up front and leave the loop once MAX_REPORTED_LOCATIONS are retained. That drops the per-location prefix checks and count increments on that path. I also track the remaining byte budget directly instead of recomputing it from retained bytes on each iteration.
+> The first version, at 45 lines, took report_ir from 511244207 to 505701586, ratio 0.9892. The fuller version, at 79 lines, took report_ir from 511244213 to 490297972, ratio 0.9590. hits_ir stayed flat at ratio 0.9998. Both versions produced identical outputs and passed the guards. The 79 line version is submitted and waiting on replays.
+> I now believe the report cost lives in per-location bookkeeping, not in the hits path.
+> Next, I want to look at the filtered path in _breakpoint_report, and at the JSON size work around _json_size.
+>
+> 2026-10-13, episode `38921a7e16cf` (accepted)
+
+> I worked on _breakpoint_report in bridge/native/rea_lldb_tracer.py. It called len(json.dumps(location)) for every newly resolved location. The dicts built by _location always have str keys and str or None values. So I made _location_json_size return the exact same length through the C string encoder, and fall back to json.dumps for any other value type. That took two edits, at lines 570-572 and 607-608.
+> In my sandbox run the guard passed with 1 file and 3 lines, both builds were ok, and outputs were identical. report_ir went from 540357806 to 527508738, ratio 0.9762. hits_ir went from 1005159370 to 1004151821, ratio 0.9990, so the hit path barely moved.
+> The per-location encoder call was real overhead on the report path. It was not the main cost on the hit path. This is my own measurement, not a verdict. The candidate is committed and queued for replay.
+> Next I would look for other json.dumps calls inside _report used only to measure size.
+>
+> 2026-10-13, episode `cabfd6a122f8` (accepted)
+
 > I worked on _breakpoint_report in bridge/native/rea_lldb_tracer.py. Each resolved address entry is now an immutable tuple. It holds the location, its estimated and exact JSON sizes, and its symbol text, all computed once when the address is first resolved. That removed the lazy size branch, the content-keyed size dict with its tuple keys, and the redundant identity re-check after the id lookup.
 > The first attempt changed 27 lines. report_ir went from 532686368 to 528575297, ratio 0.9923, which fell short of the required 0.9900 and was rejected. The fuller rewrite changed 65 lines. report_ir went from 532686362 to 519903089, ratio 0.9760, and hits_ir held at 0.9994. Outputs were identical in both runs. I submitted it and it is queued for replay.
 > The cost in this function was repeated size work per location. A small trim did not move it enough. Computing everything once per address did.
@@ -39,27 +60,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next, I would profile the hits path separately. I would also look at whether _location resolution can reuse the same cache.
 >
 > 2026-10-13, episode `22ad89c7626e` (accepted)
-
-> I changed _breakpoint_report in bridge/native/rea_lldb_tracer.py. Before, it called _location for every breakpoint location. Each call made the module, symbol, file address and load address queries and built a dict. It did that again when the same address object came back in a later breakpoint. Now each address object is resolved once per call and memoised by id(address). The cache entry keeps a reference to the address so the id stays valid. The diff is 11 lines in two edits.
-> My sandbox run showed report_ir going from 688607984 to 575536376, ratio 0.8358. hits_ir went from 1056030815 to 1060418481, ratio 1.0042. Outputs were identical, guards were ok and both builds passed. It is submitted and queued. The replays will decide.
-> What I believe now is that repeated address lookups were a real cost in report building. The small hits_ir rise is worth watching.
-> Next, I would profile the hits path on its own. I would also check whether _location_json_size repeats work that the cache could cover.
->
-> 2026-10-13, episode `50fed88a2fc4` (accepted)
-
-> I read bridge/native/rea_lldb_tracer.py around the hit path, plus lineage_bench.py and lineage_fakelldb.py. I was looking for a hits_ir change that does not overlap my pending candidate. That candidate caches per-location sizes in the backtrace loop of _handle_breakpoint and is still being replayed.
-> I made no edits and ran no sandbox evaluations. I measured nothing this session, so there are no numbers to report. Searches for _record, _fits_trace_budget and _estimated_json_size returned 30 matching lines. I traced the per-hit work outside the backtrace loop and found no clear gain. The fake LLDB accessors that _location calls are trivial. The journal's json.dumps of each record is needed for its output. I stopped without a candidate.
-> My view now is that most of the per-hit cost sits in the backtrace loop my pending candidate already touches. Outside it there is little to cut.
-> Next, wait for the replay result on the pending candidate. If it holds, look at what remains in _handle_breakpoint after that change. If it does not, start again from _fits_trace_budget.
->
-> 2026-10-13, episode `4bf9bd27bdcf` (no candidate)
-
-> I worked in bridge/native/rea_lldb_tracer.py, in the backtrace loop of _handle_breakpoint. Each frame location used to have its estimated JSON size and exact JSON length computed again on every hit. I added a small module-level cache keyed by tuple(location.items()). It holds at most 4096 entries and is cleared when full. That is 23 changed lines in one file.
-> In my sandbox the evaluation was accepted. hits_ir went from 1225871606 to 1019067593, a ratio of 0.8313. report_ir went from 691038215 to 691620842, a ratio of 1.0008, so the report path did not get faster and did not get meaningfully worse. Outputs were identical and the guards were within limits. This is my own measurement, not the replay verdict.
-> I now believe backtraces repeat the same code addresses across hits. The Python sizing loops were paying for that repetition once per frame.
-> Next, check how often the cache hits its 4096 limit and is cleared on long traces. After that, look for other per-frame work in _handle_breakpoint that also repeats.
->
-> 2026-10-13, episode `8579b7963c0d` (accepted)
 
 ## Licence
 
