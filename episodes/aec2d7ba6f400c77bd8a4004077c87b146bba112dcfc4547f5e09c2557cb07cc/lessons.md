@@ -1,16 +1,16 @@
 # Lessons: rea
 
-Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 31 published attempts.
+Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 32 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
 ## Target perf:report_ir
 
-- Attempts: 13 (9 accepted, 4 no candidate)
+- Attempts: 14 (9 accepted, 5 no candidate)
 - Best accepted effect: 34.92% (ratio 0.6508), episode `d02dad97cc12`
 - Accepted effects: 34.92%, 16.74%, 10.08%, 4.12%, 3.50%, 2.45%, 2.32%, 1.99%, 1.24%
 - Files changed by accepted candidates: `bridge/native/rea_lldb_tracer.py`
-- Median model spend per attempt: 0.3751 USD (over 13 attempts with a recorded cost)
+- Median model spend per attempt: 0.3851 USD (over 14 attempts with a recorded cost)
 
 ## Target perf:hits_ir
 
@@ -25,6 +25,13 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I worked on the breakpoint hit path in bridge/native/rea_lldb_tracer.py. In _handle_breakpoint I inlined _wanted, _can_retain_trace and the cache-hit path of _frame_location for backtrace frames. I also removed the unused _location_sizes helper.
+> Four sandbox runs, all with identical outputs, all rejected for no improvement against the required 0.9900. Evaluation 1 gave hits_ir 0.9931 with report_ir 1.0009. Evaluation 3 gave 0.9909 with report_ir 1.0025. Evaluation 5 also inlined the top-frame lookup. It did not help: 0.9932, with report_ir 1.0072. Evaluation 7 was the best, hits_ir 0.9907 with report_ir 1.0019. I ran out of evaluations and submitted nothing.
+> Call overhead in _handle_breakpoint is real but small. Removing it gets close to the bar and stops just short. Inlining more grows the function and costs report_ir.
+> Next, start from the evaluation 7 shape. Look for work that can be skipped per hit, not just calls that can be flattened. Leave the top-frame lookup as a call.
+>
+> 2026-10-13, episode `ce427637a045` (no candidate)
 
 > I worked on the per-hit backtrace path in bridge/native/rea_lldb_tracer.py. In _handle_breakpoint I tightened the backtrace loop. I dropped a budget check that the estimate check already covers, bound the append methods to locals, and joined the journal row in one step. For the second attempt I added an id(symbol) cache for symbol lookups.
 > The first change gave hits_ir 545465381 to 544846214, ratio 0.9989, and report_ir ratio 0.9965. Outputs were identical. It was rejected because 0.9989 did not reach the required 0.9900. The cache did not help. hits_ir went from 545465387 to 552702074, ratio 1.0133, so the lookup costs more than it saves. Outputs were identical. I submitted nothing.
@@ -53,13 +60,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next I will profile _handle_breakpoint and the frame location lookups. I want to know whether a cost per hit remains outside register handling.
 >
 > 2026-10-13, episode `a93f42a33100` (rejected)
-
-> I read _handle_breakpoint in bridge/native/rea_lldb_tracer.py. On every breakpoint hit it called _encode_json on the whole record. That record includes the five location keys, whose encoded text is already cached in the _frame_location entry. I added a helper, _record_json, that builds the same JSON text directly. It writes integers and floats with repr, strings with json's encode_basestring_ascii, and reuses the cached location text. I made small edits at two call sites near lines 614 and 650.
-> In the sandbox, hits_ir went from 573088593 to 532721171, a ratio of 0.9296. report_ir went from 484614811 to 486472508, a ratio of 1.0038, so the report path got slightly worse. Outputs were identical, both builds passed, and the guard was ok with 58 lines in 1 file. The candidate is submitted and queued for independent replay.
-> I now believe generic JSON encoding is a real cost per hit in this tracer, and cached fragments are worth reusing.
-> Next I would look at why report_ir rose and check whether other per-hit encoders can reuse cached text.
->
-> 2026-10-13, episode `2f9abce93645` (accepted)
 
 ## Licence
 
