@@ -1,6 +1,6 @@
 # Lessons: rea
 
-Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 40 published attempts.
+Lineage `aec2d7ba6f400c77bd8a4004077c87b146bba112dcfc4547f5e09c2557cb07cc` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 41 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -14,17 +14,24 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:hits_ir
 
-- Attempts: 24 (16 accepted, 2 rejected, 6 no candidate)
+- Attempts: 25 (17 accepted, 2 rejected, 6 no candidate)
 - Best accepted effect: 20.45% (ratio 0.7955), episode `0542a96fab94`
-- Accepted effects: 20.45%, 15.33%, 9.30%, 8.00%, 6.92%, 6.81%, 6.70%, 4.76%, 3.24%, 2.20%, 1.91%, 1.68%, 1.68%, 1.19%, 1.07%, 1.06%
+- Accepted effects: 20.45%, 15.33%, 9.30%, 8.00%, 6.92%, 6.81%, 6.70%, 4.77%, 4.76%, 3.24%, 2.20%, 1.91%, 1.68%, 1.68%, 1.19%, 1.07%, 1.06%
 - Why candidates failed: stale_conflict (1), no_improvement (1)
 - Files changed by accepted candidates: `bridge/native/rea_lldb_tracer.py`
 - Files changed by rejected candidates: `bridge/native/rea_lldb_tracer.py`
-- Median model spend per attempt: 0.3924 USD (over 24 attempts with a recorded cost)
+- Median model spend per attempt: 0.4018 USD (over 25 attempts with a recorded cost)
 
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I worked in bridge/native/rea_lldb_tracer.py, in _handle_breakpoint. For every frame, the backtrace loop made six SB calls: GetModule, GetSymbol, GetLoadAddress, GetFileAddress, IsValid and GetName. All six only built the key for the cached _frame_location entry. I added a module-level _FRAME_ADDRESSES dict that maps id(address) to (address, entry). The entry holds the address, so the object stays alive and its id cannot be reused. I also made two small edits near lines 404 and 724.
+> In my sandbox run, hits_ir went from 505171827 to 483181969, a ratio of 0.9565. report_ir went from 478402976 to 479553033, a ratio of 1.0024, so it did not improve. Outputs were identical and the guard passed. This is my own measurement, not a verdict.
+> I now think per-frame SB calls are a real cost in the hit path. Report work is untouched by this change.
+> Next, I should check whether the address objects are stable across hits in real lldb, not only in lineage_fakelldb.py. After that I should look for similar repeated SB calls on the report path.
+>
+> 2026-10-13, episode `9416a1233644` (accepted)
 
 > I tried a leaner inner loop in _breakpoint_report in bridge/native/rea_lldb_tracer.py. I replaced repeated len() calls and global lookups with a local append and a counter. There were three small edits around lines 907, 924 and 956.
 > It did not help. In my sandbox evaluation the outputs were identical and the build passed. report_ir went from 496494755 to 497076292, a ratio of 1.0012. The required ratio was 0.9900, so the evaluation rejected it with no_improvement. hits_ir went from 496134728 to 496044174, a ratio of 0.9998. I did not submit a candidate.
@@ -53,13 +60,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next I will read _breakpoint_report and the per-hit path in rea_lldb_tracer.py, lines 652-762 and 800-990. I will profile those against lineage_fakelldb.py and look for repeated work per hit.
 >
 > 2026-10-13, episode `dcbbd960aef8` (no candidate)
-
-> I tried to cut hits_ir in bridge/native/rea_lldb_tracer.py by memoising the per-target values that _dynamic_class reads on every hit: byte order, address size and the ObjC id type. I also reused the register-read SBError for the selector read instead of making a new one.
-> The sandbox measured hits_ir going from 512783272 to 512616935, a ratio of 0.9997 against the required 0.9900. Outputs were identical and the guards were fine. report_ir moved from 503731284 to 504943416, ratio 1.0024. The change did not help, so I reverted it and submitted nothing.
-> What I believe now: the per-hit lookups in _dynamic_class are not where the cost is. report_ir is about the same size as hits_ir, 503M against 512M, even though the two do different work. That suggests a large fixed cost shared by both runs.
-> Next time I should measure what lineage_bench.py spends before any hit happens, such as setup and import in the tracer and the fake LLDB, and only then look at per-hit code.
->
-> 2026-10-13, episode `d2084b692f3f` (no candidate)
 
 ## Licence
 
