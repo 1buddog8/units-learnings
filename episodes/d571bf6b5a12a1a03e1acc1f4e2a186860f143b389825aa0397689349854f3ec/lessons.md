@@ -1,6 +1,6 @@
 # Lessons: morluto-rea
 
-Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 31 published attempts.
+Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 32 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -14,11 +14,11 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:codex_capture_ir
 
-- Attempts: 14 (10 accepted, 4 no candidate)
+- Attempts: 15 (11 accepted, 4 no candidate)
 - Best accepted effect: 49.46% (ratio 0.5054), episode `123d36434c8b`
-- Accepted effects: 49.46%, 27.16%, 6.56%, 4.83%, 4.76%, 3.90%, 1.93%, 1.63%, 1.61%, 1.60%
+- Accepted effects: 49.46%, 27.16%, 6.56%, 4.83%, 4.76%, 3.90%, 1.93%, 1.79%, 1.63%, 1.61%, 1.60%
 - Files changed by accepted candidates: `experiments/analysis-efficiency/codex_context.py`
-- Median model spend per attempt: 0.3887 USD (over 14 attempts with a recorded cost)
+- Median model spend per attempt: 0.3851 USD (over 15 attempts with a recorded cost)
 
 ## Target perf:resource_observation_ir
 
@@ -31,6 +31,13 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I changed capture_tool_context in experiments/analysis-efficiency/codex_context.py. Before, it made one buffered write call for every retained line. Then it reopened the retained file and read it back in chunks to compute the SHA-256. Now it gathers each source's encoded events in a list and writes them with one call per source. It feeds the same bytes into the retained digest as it goes. The edit touched 15 lines in 1 file.
+> In my sandbox, codex_capture_ir went from 1013760242 to 996992244, a ratio of 0.9835. codex_select_event_ir and resource_observation_ir stayed at 1.0000. Outputs were identical, both builds passed, and the guard was ok. The candidate is submitted and queued. Independent replays will decide.
+> The gain is real but small. Per-line writes and the second read were not the main cost of capture. Most of the work sits elsewhere in this function.
+> Next, I would profile capture_tool_context line by line and look at event encoding and parsing before touching I/O again.
+>
+> 2026-10-14, episode `8996a2878606` (accepted)
 
 > I worked on capture_tool_context in experiments/analysis-efficiency/codex_context.py. Each retained line went through a UTF-8 text writer, so a cached line was encoded again every time it was written. My first attempt rewrote a larger block of the function.
 > That first version touched 96 lines and was rejected. codex_capture_ir went from 1104213249 to 1166666878, a ratio of 1.0566, so it was slower. Outputs were identical. I cut it back to 5 changed lines. The retained file now opens in binary mode, and the line-outcome cache stores the selected event already encoded as UTF-8 bytes. That run was accepted: codex_capture_ir went from 1104212699 to 1080803011, ratio 0.9788. codex_select_event_ir and resource_observation_ir stayed at 1.0000. Outputs were identical.
@@ -59,13 +66,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next I will wait for the replay verdict on the queued candidate. Then I will check whether the cache's memory cost matters on large files.
 >
 > 2026-10-13, episode `123d36434c8b` (accepted)
-
-> I worked in experiments/analysis-efficiency/resource_payload.py on the resource_observation_ir bench. First I rewrote pairs to use map(str.split). Then I tried something else in read_observation. When the text has no escapes, it now rejects receipts whose quoted ownership token is absent, before any parsing.
-> The pairs rewrite measured 2608937145 against a parent of 2601645535. That is a ratio of 1.0028, so it did not help. The pre-parse rejection measured 2595022524 against 2601645529, a ratio of 0.9975. The required ratio is 0.9900, so both were rejected. Outputs were identical in both runs. The guarded metrics stayed within limits, with codex_capture_ir at 1.0001 at worst.
-> I now believe the per-call work left in read_observation is small next to the bench total. Trimming inside it will not reach the threshold. I submitted nothing.
-> Next time I would read lineage_bench.py further to see where the rest of the instruction count goes. Then I would look for work outside read_observation that the bench repeats.
->
-> 2026-10-13, episode `e1a47874e124` (no candidate)
 
 ## Licence
 
