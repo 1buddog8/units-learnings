@@ -1,6 +1,6 @@
 # Lessons: morluto-rea
 
-Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 30 published attempts.
+Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 31 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -14,11 +14,11 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:codex_capture_ir
 
-- Attempts: 13 (9 accepted, 4 no candidate)
+- Attempts: 14 (10 accepted, 4 no candidate)
 - Best accepted effect: 49.46% (ratio 0.5054), episode `123d36434c8b`
-- Accepted effects: 49.46%, 27.16%, 6.56%, 4.83%, 4.76%, 3.90%, 1.63%, 1.61%, 1.60%
+- Accepted effects: 49.46%, 27.16%, 6.56%, 4.83%, 4.76%, 3.90%, 1.93%, 1.63%, 1.61%, 1.60%
 - Files changed by accepted candidates: `experiments/analysis-efficiency/codex_context.py`
-- Median model spend per attempt: 0.3851 USD (over 13 attempts with a recorded cost)
+- Median model spend per attempt: 0.3887 USD (over 14 attempts with a recorded cost)
 
 ## Target perf:resource_observation_ir
 
@@ -31,6 +31,13 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I worked on capture_tool_context in experiments/analysis-efficiency/codex_context.py. Each retained line went through a UTF-8 text writer, so a cached line was encoded again every time it was written. My first attempt rewrote a larger block of the function.
+> That first version touched 96 lines and was rejected. codex_capture_ir went from 1104213249 to 1166666878, a ratio of 1.0566, so it was slower. Outputs were identical. I cut it back to 5 changed lines. The retained file now opens in binary mode, and the line-outcome cache stores the selected event already encoded as UTF-8 bytes. That run was accepted: codex_capture_ir went from 1104212699 to 1080803011, ratio 0.9788. codex_select_event_ir and resource_observation_ir stayed at 1.0000. Outputs were identical.
+> I now believe the cost in this function sits in repeated encoding, and that broad restructuring adds more than it saves.
+> Next I want to wait for the replay verdict. After that, I want to check whether the cache lookup itself can be made cheaper.
+>
+> 2026-10-13, episode `11a2fc7099d7` (accepted)
 
 > I changed capture_tool_context in experiments/analysis-efficiency/codex_context.py. It kept its line-outcome cache per source file. That cache holds the decode error reason, or the event type plus the encoded selected event. So an identical line in another rollout file was decoded, selected and encoded again. The outcome depends only on the line bytes. I moved the cache dict so it is shared across files. The source name and line number are still attached per occurrence when errors are recorded. Six lines changed in one file.
 > In my sandbox run the outcome was accepted, with identical outputs and the guard ok. codex_capture_ir went from 1476941509 to 1070412056, a ratio of 0.7247. codex_select_event_ir and resource_observation_ir stayed at a ratio of 1.0000.
@@ -59,13 +66,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next time I would read lineage_bench.py further to see where the rest of the instruction count goes. Then I would look for work outside read_observation that the bench repeats.
 >
 > 2026-10-13, episode `e1a47874e124` (no candidate)
-
-> I worked on selected_event in experiments/analysis-efficiency/codex_context.py, aiming at codex_select_event_ir. First I replaced dict.get with a membership test plus subscript. Then, in the token-count and tool-item key loops, I replaced membership plus subscript with a bound get and a sentinel.
-> Neither change helped. Both kept outputs identical. The first moved codex_select_event_ir from 2481534489 to 2566443999, a ratio of 1.0342. The second moved it from 2481534483 to 2677969753, a ratio of 1.0792. The required ratio was 0.9900, so both were rejected. codex_capture_ir and resource_observation_ir stayed within their guard limits both times. I reverted and submitted nothing.
-> On this interpreter, the lookups in selected_event already use the cheapest form I could find. Swapping one lookup idiom for another only added cost.
-> Next time I would stop tuning the lookups. I would read how selected_event walks its events and look for repeated work or a loop that can exit early.
->
-> 2026-10-13, episode `f4758fbc1912` (no candidate)
 
 ## Licence
 
