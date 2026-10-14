@@ -1,16 +1,16 @@
 # Lessons: morluto-rea
 
-Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 34 published attempts.
+Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 35 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
 ## Target perf:codex_select_event_ir
 
-- Attempts: 8 (4 accepted, 4 no candidate)
+- Attempts: 9 (4 accepted, 5 no candidate)
 - Best accepted effect: 11.87% (ratio 0.8813), episode `468e974ddf79`
 - Accepted effects: 11.87%, 10.81%, 1.65%, 1.15%
 - Files changed by accepted candidates: `experiments/analysis-efficiency/codex_context.py`
-- Median model spend per attempt: 0.4781 USD (over 8 attempts with a recorded cost)
+- Median model spend per attempt: 0.5401 USD (over 9 attempts with a recorded cost)
 
 ## Target perf:codex_capture_ir
 
@@ -31,6 +31,13 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I worked on selected_event in experiments/analysis-efficiency/codex_context.py, with codex_select_event_ir as the target metric. I made two small changes, and both gave identical outputs.
+> The first change replaced the `key in d` / `d[key]` pairs with bound `.get(key, sentinel)` lookups. codex_select_event_ir went from 2708751449 to 2890440945, a ratio of 1.0671. That is worse, and it was rejected. The second change built the response_item selection with a dict comprehension. codex_select_event_ir went from 2708751443 to 2708080541, a ratio of 0.9998, short of the required 0.9900, so it was rejected too. Guards and builds were fine both times. I submitted no change.
+> What I believe now: the per-call work in selected_event is already lean. Swapping lookup styles does not help, and the bound .get version hurt.
+> Next time, I would look at how often selected_event is called, rather than at its body. I would also check whether a caller can skip work before it gets there.
+>
+> 2026-10-14, episode `12677c83254e` (no candidate)
 
 > I read experiments/analysis-efficiency/resource_payload.py and the bench section of lineage_bench.py. pairs() split and parsed the kernel counter text on every call, even when the same text had already been parsed. Since the result depends only on the text, I changed lines 18-26 to cache valid results by text, bounded at 1024 entries, and to return a fresh dict copy each time. Malformed text is not cached and still raises the same errors on every call.
 > My sandbox run accepted it with identical outputs. resource_observation_ir went from 837144457 to 666078508, ratio 0.7957. codex_capture_ir moved to ratio 1.0005 and codex_select_event_ir to 1.0002, both within guard limits. The guard counted 1 file and 13 lines. The candidate is submitted and queued for independent replay.
@@ -59,13 +66,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next I want to wait for the replay verdict. After that, I want to check whether the cache lookup itself can be made cheaper.
 >
 > 2026-10-13, episode `11a2fc7099d7` (accepted)
-
-> I changed capture_tool_context in experiments/analysis-efficiency/codex_context.py. It kept its line-outcome cache per source file. That cache holds the decode error reason, or the event type plus the encoded selected event. So an identical line in another rollout file was decoded, selected and encoded again. The outcome depends only on the line bytes. I moved the cache dict so it is shared across files. The source name and line number are still attached per occurrence when errors are recorded. Six lines changed in one file.
-> In my sandbox run the outcome was accepted, with identical outputs and the guard ok. codex_capture_ir went from 1476941509 to 1070412056, a ratio of 0.7247. codex_select_event_ir and resource_observation_ir stayed at a ratio of 1.0000.
-> I now believe repeated lines across rollout files were a large share of capture cost. This is my own measurement, not a verdict. Replays decide.
-> Next, I would look at whether select_event work has a similar per-file cache that could be shared.
->
-> 2026-10-13, episode `3930416526bc` (accepted)
 
 ## Licence
 
