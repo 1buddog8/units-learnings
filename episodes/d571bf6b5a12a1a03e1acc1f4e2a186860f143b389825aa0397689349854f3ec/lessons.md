@@ -1,6 +1,6 @@
 # Lessons: morluto-rea
 
-Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 33 published attempts.
+Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 34 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -22,15 +22,22 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:resource_observation_ir
 
-- Attempts: 10 (6 accepted, 4 no candidate)
+- Attempts: 11 (7 accepted, 4 no candidate)
 - Best accepted effect: 67.84% (ratio 0.3216), episode `478b87078cef`
-- Accepted effects: 67.84%, 14.93%, 3.41%, 2.90%, 2.49%, 1.28%
+- Accepted effects: 67.84%, 14.93%, 14.38%, 3.41%, 2.90%, 2.49%, 1.28%
 - Files changed by accepted candidates: `experiments/analysis-efficiency/resource_payload.py`
-- Median model spend per attempt: 0.4488 USD (over 10 attempts with a recorded cost)
+- Median model spend per attempt: 0.4461 USD (over 11 attempts with a recorded cost)
 
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I read experiments/analysis-efficiency/resource_payload.py and the bench section of lineage_bench.py. pairs() split and parsed the kernel counter text on every call, even when the same text had already been parsed. Since the result depends only on the text, I changed lines 18-26 to cache valid results by text, bounded at 1024 entries, and to return a fresh dict copy each time. Malformed text is not cached and still raises the same errors on every call.
+> My sandbox run accepted it with identical outputs. resource_observation_ir went from 837144457 to 666078508, ratio 0.7957. codex_capture_ir moved to ratio 1.0005 and codex_select_event_ir to 1.0002, both within guard limits. The guard counted 1 file and 13 lines. The candidate is submitted and queued for independent replay.
+> I believe repeated identical counter text is common in this path, and parsing it was the main cost.
+> Next, I want to check whether the small rise in the codex metrics is noise or comes from the cache lookup.
+>
+> 2026-10-14, episode `ba762b3b3912` (accepted)
 
 > I changed read_observation in experiments/analysis-efficiency/resource_payload.py. It decoded and validated the full receipt JSON on every call, even when the text matched a receipt it had already read, as happens while polling. The decode and validation now live in _validated(text). Its result is either the checked fields or None for a malformed receipt. The ownership token comparison stays outside it. Three edits, 44 changed lines.
 > In my sandbox, resource_observation_ir went from 2580189456 to 839772267, ratio 0.3255. Outputs were identical and both builds passed. codex_capture_ir moved to ratio 1.0008 and codex_select_event_ir to ratio 1.0004, both within guard limits. The outcome was accepted. This is my own measurement, not a verdict.
@@ -59,13 +66,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next, I would look at whether select_event work has a similar per-file cache that could be shared.
 >
 > 2026-10-13, episode `3930416526bc` (accepted)
-
-> I worked in experiments/analysis-efficiency/codex_context.py on selected_event. It called the private helper _select_token_counts once for every token_usage_record and token_count event, so each of those events paid for one Python call frame. I moved that loop inline. The two branches now set up their source mapping and key tuple and share one copy of it. Key order, checks and error messages are unchanged.
-> The first attempt did not help. codex_select_event_ir went from 2590269871 to 2799625434, ratio 1.0808, and was rejected. The second reached 0.9914, still short of the required 0.9900. The third measured 2555469088, ratio 0.9866, and was accepted in my sandbox. Outputs were identical every time, and codex_capture_ir and resource_observation_ir stayed within their limits.
-> I now think call overhead in this path is real but small, and the shape of the inlined loop decides whether it pays off.
-> Next I would wait for the replays, then look at the other per-event branches in selected_event for the same helper-call pattern.
->
-> 2026-10-13, episode `f4bdc96de979` (accepted)
 
 ## Licence
 
