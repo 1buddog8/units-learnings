@@ -1,6 +1,6 @@
 # Lessons: morluto-rea
 
-Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 32 published attempts.
+Lineage `d571bf6b5a12a1a03e1acc1f4e2a186860f143b389825aa0397689349854f3ec` on [https://github.com/morluto/rea](https://github.com/morluto/rea) at `fb28ec1537e2d02aaca96325483c849c5c8ade6f`. 33 published attempts.
 
 Figures are copied from Core's published episodes (verdicts from independent replays). Nothing here is estimated.
 
@@ -22,15 +22,22 @@ Figures are copied from Core's published episodes (verdicts from independent rep
 
 ## Target perf:resource_observation_ir
 
-- Attempts: 9 (5 accepted, 4 no candidate)
-- Best accepted effect: 14.93% (ratio 0.8507), episode `ff27420a8738`
-- Accepted effects: 14.93%, 3.41%, 2.90%, 2.49%, 1.28%
+- Attempts: 10 (6 accepted, 4 no candidate)
+- Best accepted effect: 67.84% (ratio 0.3216), episode `478b87078cef`
+- Accepted effects: 67.84%, 14.93%, 3.41%, 2.90%, 2.49%, 1.28%
 - Files changed by accepted candidates: `experiments/analysis-efficiency/resource_payload.py`
-- Median model spend per attempt: 0.4516 USD (over 9 attempts with a recorded cost)
+- Median model spend per attempt: 0.4488 USD (over 10 attempts with a recorded cost)
 
 ## In the agent's own words
 
 The agent's journal entries on this lineage, newest first, verbatim. They are its own notes: claimed, not checked.
+
+> I changed read_observation in experiments/analysis-efficiency/resource_payload.py. It decoded and validated the full receipt JSON on every call, even when the text matched a receipt it had already read, as happens while polling. The decode and validation now live in _validated(text). Its result is either the checked fields or None for a malformed receipt. The ownership token comparison stays outside it. Three edits, 44 changed lines.
+> In my sandbox, resource_observation_ir went from 2580189456 to 839772267, ratio 0.3255. Outputs were identical and both builds passed. codex_capture_ir moved to ratio 1.0008 and codex_select_event_ir to ratio 1.0004, both within guard limits. The outcome was accepted. This is my own measurement, not a verdict.
+> I now believe validation here depends only on the receipt text, apart from the token check. That makes it safe to reuse.
+> Next, I want to wait for the replays. I will also check whether the small rise in codex_capture_ir comes from this file or is noise.
+>
+> 2026-10-14, episode `478b87078cef` (accepted)
 
 > I changed capture_tool_context in experiments/analysis-efficiency/codex_context.py. Before, it made one buffered write call for every retained line. Then it reopened the retained file and read it back in chunks to compute the SHA-256. Now it gathers each source's encoded events in a list and writes them with one call per source. It feeds the same bytes into the retained digest as it goes. The edit touched 15 lines in 1 file.
 > In my sandbox, codex_capture_ir went from 1013760242 to 996992244, a ratio of 0.9835. codex_select_event_ir and resource_observation_ir stayed at 1.0000. Outputs were identical, both builds passed, and the guard was ok. The candidate is submitted and queued. Independent replays will decide.
@@ -59,13 +66,6 @@ The agent's journal entries on this lineage, newest first, verbatim. They are it
 > Next I would wait for the replays, then look at the other per-event branches in selected_event for the same helper-call pattern.
 >
 > 2026-10-13, episode `f4bdc96de979` (accepted)
-
-> I worked in experiments/analysis-efficiency/codex_context.py, in capture_tool_context, after reading lineage_bench.py to see what codex_capture_ir measures. Each rollout line's outcome depends only on its bytes. That outcome is a parse error reason, or an event type count plus the encoded selected event. So I added a per-source dict keyed by line bytes. A repeated line in the same file reuses its stored outcome. It is not decoded, run through selected_event and re-encoded again.
-> My first attempt, 7 lines, did not help. codex_capture_ir went from 2923717277 to 2973886774, ratio 1.0172, and was rejected. The 25 line version was accepted in my sandbox. codex_capture_ir went from 2923717273 to 1464534223, ratio 0.5009. The other two metrics stayed near 1.0003. Outputs were identical.
-> I now believe the capture loop does a lot of repeated work on duplicate lines, and caching by raw bytes removes most of it.
-> Next I will wait for the replay verdict on the queued candidate. Then I will check whether the cache's memory cost matters on large files.
->
-> 2026-10-13, episode `123d36434c8b` (accepted)
 
 ## Licence
 
